@@ -1,0 +1,27 @@
+R_DEF: Internal format may change without notice
+local
+color accent
+color background
+color black
+color error
+color ic_launcher_background
+color primary
+color primary_dark
+color success
+color text_primary
+color text_secondary
+color warning
+color white
+drawable ic_launcher_foreground
+drawable ic_location
+id btnSos
+id btnStartTracking
+id btnStopTracking
+id etDeviceId
+id tilDeviceId
+id tvStatus
+layout activity_main
+mipmap ic_launcher
+mipmap ic_launcher_round
+string app_name
+style Theme.FamilyTracker

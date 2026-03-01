@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!supabaseUrl || !supabaseKey) {
     console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey })
     return res.status(500).json({ 
-      error: 'Server configuration error: Missing Supabase credentials. Please add SUPABASE_URL and SUPABASE_ANON_KEY environment variables on Vercel.' 
+      error: 'Server configuration error: Missing Supabase credentials.' 
     })
   }
 
@@ -36,19 +36,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     })
 
+    console.log('Proxy request:', req.method, url.toString())
+
+    // Build headers - only include Prefer if it has a value
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+    }
+    
+    if (req.headers.prefer) {
+      headers['Prefer'] = req.headers.prefer as string
+    }
+
     // Forward the request to Supabase
     const response = await fetch(url.toString(), {
       method: req.method,
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': req.headers.authorization || `Bearer ${supabaseKey}`,
-        'Prefer': req.headers.prefer as string || '',
-      },
+      headers,
       body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
     })
 
-    const data = await response.json()
+    const text = await response.text()
+    console.log('Supabase response:', response.status, text.substring(0, 500))
+
+    // Try to parse as JSON
+    let data
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = { rawResponse: text }
+    }
+
     return res.status(response.status).json(data)
   } catch (err: any) {
     console.error('Proxy error:', err)

@@ -72,15 +72,25 @@ export default function Dashboard() {
   const { devices, setDevices, selectedDevice, setSelectedDevice, updateDeviceLocation } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
 
   const fetchDevices = async () => {
-    if (!user) return
+    if (!user) {
+      setError('No user logged in')
+      setLoading(false)
+      return
+    }
+    
+    setError(null)
     
     try {
+      console.log('Fetching devices for user:', user.id)
       const { data: devicesData } = await api.from('devices').select('*', {
         eq: ['user_id', user.id]
       })
+
+      console.log('Devices response:', devicesData)
 
       if (!devicesData) {
         setLoading(false)
@@ -107,8 +117,9 @@ export default function Dashboard() {
       )
 
       setDevices(devicesWithLocations)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching devices:', err)
+      setError(err.message || 'Failed to fetch devices')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -140,6 +151,23 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-120px)]">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
+          <p className="text-red-700 font-medium mb-2">Error loading data</p>
+          <p className="text-red-600 text-sm mb-4">{error}</p>
+          <button 
+            onClick={() => { setLoading(true); fetchDevices(); }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }

@@ -10,13 +10,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end()
   }
 
+  // Check for required env vars
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey })
+    return res.status(500).json({ 
+      error: 'Server configuration error: Missing Supabase credentials. Please add SUPABASE_URL and SUPABASE_ANON_KEY environment variables on Vercel.' 
+    })
+  }
+
   try {
     const { path } = req.query
     const pathArray = Array.isArray(path) ? path : [path]
     const supabasePath = pathArray.join('/')
-    
-    const supabaseUrl = process.env.SUPABASE_URL!
-    const supabaseKey = process.env.SUPABASE_ANON_KEY!
 
     // Build the target URL
     const url = new URL(`${supabaseUrl}/rest/v1/${supabasePath}`)

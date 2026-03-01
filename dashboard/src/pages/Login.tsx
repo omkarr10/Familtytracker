@@ -19,22 +19,39 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         })
         if (error) throw error
-        setError('Check your email for the confirmation link!')
+        if (data.user && !data.session) {
+          setError('Check your email for the confirmation link!')
+        } else {
+          navigate('/')
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
-        if (error) throw error
-        navigate('/')
+        if (error) {
+          // More helpful error messages
+          if (error.message.includes('Invalid login')) {
+            throw new Error('Invalid email or password. Please try again.')
+          } else if (error.message.includes('Email not confirmed')) {
+            throw new Error('Please confirm your email first. Check your inbox.')
+          } else if (error.message.includes('fetch')) {
+            throw new Error('Network error. Please check your internet connection.')
+          }
+          throw error
+        }
+        if (data.session) {
+          navigate('/')
+        }
       }
     } catch (err: any) {
-      setError(err.message)
+      console.error('Auth error:', err)
+      setError(err.message || 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }

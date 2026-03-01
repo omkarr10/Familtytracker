@@ -22,9 +22,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { path } = req.query
-    const pathArray = Array.isArray(path) ? path : [path]
-    const supabasePath = pathArray.join('/')
+    // Get the path from the URL itself (more reliable than query params)
+    const urlPath = req.url || ''
+    const match = urlPath.match(/\/api\/proxy\/([^?]+)/)
+    const supabasePath = match ? match[1] : ''
+    
+    if (!supabasePath) {
+      return res.status(400).json({ error: 'No table path specified' })
+    }
 
     // Build the target URL
     const url = new URL(`${supabaseUrl}/rest/v1/${supabasePath}`)

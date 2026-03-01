@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useAppStore } from '../store/appStore'
 import { Alert, Device } from '../types/database'
@@ -51,49 +51,51 @@ export default function Alerts() {
   }, [user])
 
   const fetchData = async () => {
-    // Fetch devices first
-    const { data: devicesData } = await supabase
-      .from('devices')
-      .select('*')
-      .eq('user_id', user!.id)
+    try {
+      // Fetch devices first
+      const { data: devicesData } = await api.from('devices').select('*', {
+        eq: ['user_id', user!.id]
+      })
 
-    const devices: Device[] = devicesData || []
+      const devices: Device[] = devicesData || []
 
-    // Fetch alerts
-    if (devices.length > 0) {
-      const deviceIds = devices.map((d) => d.id)
-      const { data: alertsData, error } = await supabase
-        .from('alerts')
-        .select('*')
-        .in('device_id', deviceIds)
-        .order('created_at', { ascending: false })
-        .limit(100)
+      // Fetch alerts for each device
+      if (devices.length > 0) {
+        const allAlerts: Alert[] = []
+        for (const device of devices) {
+          const { data: alertsData } = await api.from('alerts').select('*', {
+            eq: ['device_id', device.id],
+            order: ['created_at', false],
+            limit: 50
+          })
+          if (alertsData) allAlerts.push(...alertsData)
+        }
 
-      if (error) {
-        console.error('Error fetching alerts:', error)
-      } else {
-        const alertsWithDevices = (alertsData || []).map((alert) => ({
+        // Sort by created_at descending
+        allAlerts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+        const alertsWithDevices = allAlerts.map((alert) => ({
           ...alert,
           device: devices.find((d) => d.id === alert.device_id),
         }))
         setAlerts(alertsWithDevices)
-        setGlobalAlerts(alertsData || [])
+        setGlobalAlerts(allAlerts)
       }
+    } catch (err) {
+      console.error('Error fetching alerts:', err)
     }
 
     setLoading(false)
   }
 
   const markAsRead = async (alertId: string) => {
-    const { error } = await supabase
-      .from('alerts')
-      .update({ is_read: true })
-      .eq('id', alertId)
-
-    if (!error) {
+    try {
+      await api.from('alerts').update({ is_read: true }, ['id', alertId])
       setAlerts((prev) =>
         prev.map((a) => (a.id === alertId ? { ...a, is_read: true } : a))
       )
+    } catch (err) {
+      console.error('Error marking alert as read:', err)
     }
   }
 
@@ -101,13 +103,14 @@ export default function Alerts() {
     const unreadIds = alerts.filter((a) => !a.is_read).map((a) => a.id)
     if (unreadIds.length === 0) return
 
-    const { error } = await supabase
-      .from('alerts')
-      .update({ is_read: true })
-      .in('id', unreadIds)
-
-    if (!error) {
+    try {
+      // Mark each alert as read individually through proxy
+      for (const id of unreadIds) {
+        await api.from('alerts').update({ is_read: true }, ['id', id])
+      }
       setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })))
+    } catch (err) {
+      console.error('Error marking all as read:', err)
     }
   }
 

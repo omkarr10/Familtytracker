@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Device } from '../types/database'
 import { formatDistanceToNow } from 'date-fns'
@@ -30,16 +30,14 @@ export default function Devices() {
   }, [user])
 
   const fetchDevices = async () => {
-    const { data, error } = await supabase
-      .from('devices')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching devices:', error)
-    } else {
+    try {
+      const { data } = await api.from('devices').select('*', {
+        eq: ['user_id', user!.id],
+        order: ['created_at', false]
+      })
       setDevices(data || [])
+    } catch (err) {
+      console.error('Error fetching devices:', err)
     }
     setLoading(false)
   }
@@ -48,21 +46,18 @@ export default function Devices() {
     if (!newDeviceName.trim()) return
     setAddingDevice(true)
 
-    const { data, error } = await supabase
-      .from('devices')
-      .insert({
+    try {
+      const { data } = await api.from('devices').insert({
         user_id: user!.id,
         device_name: newDeviceName.trim(),
       })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error adding device:', error)
-    } else {
-      setDevices([data, ...devices])
-      setNewDeviceName('')
-      setShowAddModal(false)
+      if (data) {
+        setDevices([data, ...devices])
+        setNewDeviceName('')
+        setShowAddModal(false)
+      }
+    } catch (err) {
+      console.error('Error adding device:', err)
     }
     setAddingDevice(false)
   }
@@ -70,15 +65,11 @@ export default function Devices() {
   const deleteDevice = async (deviceId: string) => {
     if (!confirm('Are you sure you want to delete this device? All location history will be lost.')) return
 
-    const { error } = await supabase
-      .from('devices')
-      .delete()
-      .eq('id', deviceId)
-
-    if (error) {
-      console.error('Error deleting device:', error)
-    } else {
+    try {
+      await api.from('devices').delete(['id', deviceId])
       setDevices(devices.filter((d) => d.id !== deviceId))
+    } catch (err) {
+      console.error('Error deleting device:', err)
     }
   }
 

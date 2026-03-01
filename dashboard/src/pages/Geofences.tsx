@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Circle, Marker, Popup, useMapEvents } from 'react-leaflet'
 import { Icon } from 'leaflet'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Geofence } from '../types/database'
 import { Shield, Plus, Trash2, MapPin, Bell, BellOff } from 'lucide-react'
@@ -46,16 +46,14 @@ export default function Geofences() {
   }, [user])
 
   const fetchGeofences = async () => {
-    const { data, error } = await supabase
-      .from('geofences')
-      .select('*')
-      .eq('user_id', user!.id)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching geofences:', error)
-    } else {
+    try {
+      const data = await api.from('geofences')
+        .select('*')
+        .eq('user_id', user!.id)
+        .order('created_at', { ascending: false })
       setGeofences(data || [])
+    } catch (err) {
+      console.error('Error fetching geofences:', err)
     }
     setLoading(false)
   }
@@ -63,9 +61,8 @@ export default function Geofences() {
   const addGeofence = async () => {
     if (!newGeofence.name.trim() || newGeofence.latitude === 0) return
 
-    const { data, error } = await supabase
-      .from('geofences')
-      .insert({
+    try {
+      const data = await api.from('geofences').insert({
         user_id: user!.id,
         name: newGeofence.name.trim(),
         latitude: newGeofence.latitude,
@@ -74,13 +71,9 @@ export default function Geofences() {
         alert_on_enter: newGeofence.alert_on_enter,
         alert_on_exit: newGeofence.alert_on_exit,
       })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error adding geofence:', error)
-    } else {
-      setGeofences([data, ...geofences])
+      if (data && data.length > 0) {
+        setGeofences([data[0], ...geofences])
+      }
       setShowAddModal(false)
       setNewGeofence({
         name: '',
@@ -91,21 +84,19 @@ export default function Geofences() {
         alert_on_exit: true,
       })
       setIsSelectingLocation(false)
+    } catch (err) {
+      console.error('Error adding geofence:', err)
     }
   }
 
   const deleteGeofence = async (id: string) => {
     if (!confirm('Are you sure you want to delete this geofence?')) return
 
-    const { error } = await supabase
-      .from('geofences')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error deleting geofence:', error)
-    } else {
+    try {
+      await api.from('geofences').delete().eq('id', id)
       setGeofences(geofences.filter((g) => g.id !== id))
+    } catch (err) {
+      console.error('Error deleting geofence:', err)
     }
   }
 

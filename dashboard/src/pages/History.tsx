@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet'
 import { Icon, LatLngBounds } from 'leaflet'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Device, Location } from '../types/database'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
@@ -52,14 +52,17 @@ export default function History() {
     if (!user) return
 
     const fetchDevices = async () => {
-      const { data } = await supabase
-        .from('devices')
-        .select('*')
-        .eq('user_id', user.id)
+      try {
+        const { data } = await api.from('devices').select('*', {
+          eq: ['user_id', user.id]
+        })
 
-      if (data && data.length > 0) {
-        setDevices(data)
-        setSelectedDeviceId(data[0].id)
+        if (data && data.length > 0) {
+          setDevices(data)
+          setSelectedDeviceId(data[0].id)
+        }
+      } catch (err) {
+        console.error('Error fetching devices:', err)
       }
     }
 
@@ -75,20 +78,28 @@ export default function History() {
       const startDate = startOfDay(new Date(selectedDate))
       const endDate = endOfDay(new Date(selectedDate))
 
-      const { data, error } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('device_id', selectedDeviceId)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .order('created_at', { ascending: true })
+      try {
+        // Fetch more locations and filter by date client-side
+        const { data } = await api.from('locations').select('*', {
+          eq: ['device_id', selectedDeviceId],
+          limit: 1000
+        })
 
-      if (error) {
-        console.error('Error fetching locations:', error)
-      } else {
-        setLocations(data || [])
+        // Filter by date range and sort
+        const filtered = (data || [])
+          .filter((loc: Location) => {
+            const locDate = new Date(loc.created_at)
+            return locDate >= startDate && locDate <= endDate
+          })
+          .sort((a: Location, b: Location) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+
+        setLocations(filtered)
         setPlaybackIndex(0)
         setIsPlaying(false)
+      } catch (err) {
+        console.error('Error fetching locations:', err)
       }
       setLoading(false)
     }

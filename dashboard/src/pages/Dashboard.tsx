@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { Icon, LatLngBounds } from 'leaflet'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { useAppStore } from '../store/appStore'
 import { useAuthStore } from '../store/authStore'
 import { Device, Location } from '../types/database'
@@ -14,6 +14,7 @@ import {
   Wifi,
   WifiOff,
   Navigation,
+  RefreshCw,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -70,64 +71,63 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const { devices, setDevices, selectedDevice, setSelectedDevice, updateDeviceLocation } = useAppStore()
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
 
-  // Fetch devices and their latest locations
-  useEffect(() => {
+  const fetchDevices = async () => {
     if (!user) return
+    
+    try {
+      const { data: devicesData } = await api.from('devices').select('*', {
+        eq: ['user_id', user.id]
+      })
 
-    const fetchDevices = async () => {
-      const { data: devicesData, error: devicesError } = await supabase
-        .from('devices')
-        .select('*')
-        .eq('user_id', user.id)
-
-      if (devicesError) {
-        console.error('Error fetching devices:', devicesError)
+      if (!devicesData) {
+        setLoading(false)
         return
       }
 
       // Get latest location for each device
       const devicesWithLocations: DeviceWithLocation[] = await Promise.all(
-        (devicesData || []).map(async (device) => {
-          const { data: locationData } = await supabase
-            .from('locations')
-            .select('*')
-            .eq('device_id', device.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-
-          return {
-            ...device,
-            latestLocation: locationData || undefined,
+        (devicesData || []).map(async (device: Device) => {
+          try {
+            const { data: locationData } = await api.from('locations').select('*', {
+              eq: ['device_id', device.id],
+              order: ['created_at', false],
+              limit: 1
+            })
+            return {
+              ...device,
+              latestLocation: locationData?.[0] || undefined,
+            }
+          } catch {
+            return { ...device, latestLocation: undefined }
           }
         })
       )
 
       setDevices(devicesWithLocations)
+    } catch (err) {
+      console.error('Error fetching devices:', err)
+    } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
 
+  // Fetch devices and their latest locations
+  useEffect(() => {
     fetchDevices()
+    
+    // Poll for updates every 30 seconds (since realtime doesn't work through proxy)
+    const interval = setInterval(fetchDevices, 30000)
+    return () => clearInterval(interval)
+  }, [user])
 
-    // Subscribe to real-time location updates
-    const channel = supabase
-      .channel('location-updates')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'locations' },
-        (payload) => {
-          const newLocation = payload.new as Location
-          updateDeviceLocation(newLocation.device_id, newLocation)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user, setDevices, updateDeviceLocation])
+  const handleRefresh = () => {
+    setRefreshing(true)
+    fetchDevices()
+  }
 
   const getBatteryIcon = (level: number | null) => {
     if (level === null) return <Battery className="w-4 h-4 text-gray-400" />
@@ -148,7 +148,16 @@ export default function Dashboard() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Live Tracking</h1>
-        <span className="text-sm text-gray-500">{devices.length} device(s)</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 rounded-lg bg-white shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={clsx('w-5 h-5 text-gray-600', refreshing && 'animate-spin')} />
+          </button>
+          <span className="text-sm text-gray-500">{devices.length} device(s)</span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

@@ -1,18 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { api, sessionStore } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import { MapPin, Mail, Lock, Eye, EyeOff } from 'lucide-react'
-
-// Helper to add timeout to promises
-const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
-  )
-  return Promise.race([promise, timeout])
-}
 
 export default function Login() {
   const navigate = useNavigate()
+  const { setUser } = useAuthStore()
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,33 +21,19 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await withTimeout(
-          supabase.auth.signUp({ email, password }),
-          15000 // 15 second timeout
-        )
-        if (error) throw error
-        if (data.user && !data.session) {
-          setError('Check your email for the confirmation link!')
-        } else {
+        const data = await api.auth.signUp(email, password)
+        if (data.session) {
+          sessionStore.save(data.session)
+          setUser(data.user)
           navigate('/')
+        } else if (data.user) {
+          setError('Check your email for the confirmation link!')
         }
       } else {
-        const { data, error } = await withTimeout(
-          supabase.auth.signInWithPassword({ email, password }),
-          15000 // 15 second timeout
-        )
-        if (error) {
-          // More helpful error messages
-          if (error.message.includes('Invalid login')) {
-            throw new Error('Invalid email or password. Please try again.')
-          } else if (error.message.includes('Email not confirmed')) {
-            throw new Error('Please confirm your email first. Check your inbox.')
-          } else if (error.message.includes('fetch')) {
-            throw new Error('Network error. Please check your internet connection.')
-          }
-          throw error
-        }
+        const data = await api.auth.signIn(email, password)
         if (data.session) {
+          sessionStore.save(data.session)
+          setUser(data.user)
           navigate('/')
         }
       }

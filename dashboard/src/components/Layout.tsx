@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { sessionStore } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import { useAppStore } from '../store/appStore'
 import {
   MapPin,
@@ -26,12 +27,14 @@ const navItems = [
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { setUser } = useAuthStore()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { alerts } = useAppStore()
   const unreadCount = alerts.filter((a) => !a.is_read).length
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    sessionStore.clear()
+    setUser(null)
     navigate('/login')
   }
 

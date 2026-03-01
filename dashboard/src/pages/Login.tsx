@@ -49,7 +49,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.png" alt="Family Tracker" className="w-20 h-20 mb-4" />
+          <img src="/logo.jpeg" alt="Family Tracker" className="w-20 h-20 mb-4" />
           <h1 className="text-2xl font-bold text-gray-800">Family Tracker</h1>
           <p className="text-gray-500 mt-1">
             {isSignUp ? 'Create your account' : 'Welcome back'}

@@ -3,6 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { MapPin, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 
+// Helper to add timeout to promises
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
+  )
+  return Promise.race([promise, timeout])
+}
+
 export default function Login() {
   const navigate = useNavigate()
   const [isSignUp, setIsSignUp] = useState(false)
@@ -19,10 +27,10 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        })
+        const { data, error } = await withTimeout(
+          supabase.auth.signUp({ email, password }),
+          15000 // 15 second timeout
+        )
         if (error) throw error
         if (data.user && !data.session) {
           setError('Check your email for the confirmation link!')
@@ -30,10 +38,10 @@ export default function Login() {
           navigate('/')
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
+        const { data, error } = await withTimeout(
+          supabase.auth.signInWithPassword({ email, password }),
+          15000 // 15 second timeout
+        )
         if (error) {
           // More helpful error messages
           if (error.message.includes('Invalid login')) {

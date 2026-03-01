@@ -14,27 +14,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabaseKey = process.env.SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    return res.status(500).json({ error: 'Missing Supabase configuration' })
+    console.error('Missing env vars:', { 
+      SUPABASE_URL: supabaseUrl ? 'SET' : 'MISSING', 
+      SUPABASE_ANON_KEY: supabaseKey ? 'SET' : 'MISSING' 
+    })
+    return res.status(500).json({ 
+      error: 'Missing Supabase configuration',
+      details: 'Please add SUPABASE_URL and SUPABASE_ANON_KEY to Vercel Environment Variables'
+    })
   }
 
   try {
-    const { table, ...queryParams } = req.query
+    const { table, select, ...otherParams } = req.query
     
     if (!table || typeof table !== 'string') {
       return res.status(400).json({ error: 'Missing table parameter' })
     }
 
-    // Build the target URL
-    const url = new URL(`${supabaseUrl}/rest/v1/${table}`)
+    // Build the target URL - use select=* directly without encoding
+    const selectValue = select || '*'
+    let targetUrl = `${supabaseUrl}/rest/v1/${table}?select=${selectValue}`
     
-    // Forward query params
-    Object.entries(queryParams).forEach(([key, value]) => {
+    // Append other query params
+    Object.entries(otherParams).forEach(([key, value]) => {
       if (value) {
-        url.searchParams.set(key, String(value))
+        targetUrl += `&${key}=${encodeURIComponent(String(value))}`
       }
     })
 
-    console.log('DB Proxy:', req.method, url.toString())
+    console.log('DB Proxy:', req.method, targetUrl)
 
     // Build headers
     const headers: Record<string, string> = {
@@ -48,13 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Forward the request to Supabase
-    const response = await fetch(url.toString(), {
+    const response = await fetch(targetUrl, {
       method: req.method,
       headers,
       body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
     })
 
     const text = await response.text()
+    console.log('Supabase response:', response.status, text.substring(0, 200))
     
     // Try to parse as JSON
     let data

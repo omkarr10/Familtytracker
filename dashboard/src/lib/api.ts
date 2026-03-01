@@ -51,7 +51,10 @@ export const api = {
   // Generic table operations via proxy
   from: (table: string) => ({
     select: async (columns = '*', options: { eq?: [string, any], order?: [string, boolean], limit?: number } = {}) => {
-      let url = `${API_BASE}/db?table=${table}&select=${encodeURIComponent(columns)}`
+      let url = `${API_BASE}/db?table=${table}`
+      if (columns && columns !== '*') {
+        url += `&select=${encodeURIComponent(columns)}`
+      }
       if (options.eq) {
         url += `&${options.eq[0]}=eq.${options.eq[1]}`
       }
@@ -62,6 +65,7 @@ export const api = {
         url += `&limit=${options.limit}`
       }
 
+      console.log('API call:', url)
       const res = await fetchWithTimeout(url)
       const data = await res.json()
       if (!res.ok) {

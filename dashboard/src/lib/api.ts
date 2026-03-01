@@ -51,7 +51,7 @@ export const api = {
   // Generic table operations via proxy
   from: (table: string) => ({
     select: async (columns = '*', options: { eq?: [string, any], order?: [string, boolean], limit?: number } = {}) => {
-      let url = `${API_BASE}/proxy/${table}?select=${encodeURIComponent(columns)}`
+      let url = `${API_BASE}/db?table=${table}&select=${encodeURIComponent(columns)}`
       if (options.eq) {
         url += `&${options.eq[0]}=eq.${options.eq[1]}`
       }
@@ -72,7 +72,7 @@ export const api = {
     },
 
     insert: async (record: any) => {
-      const res = await fetchWithTimeout(`${API_BASE}/proxy/${table}`, {
+      const res = await fetchWithTimeout(`${API_BASE}/db?table=${table}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export const api = {
     },
 
     update: async (record: any, eq: [string, any]) => {
-      const url = `${API_BASE}/proxy/${table}?${eq[0]}=eq.${eq[1]}`
+      const url = `${API_BASE}/db?table=${table}&${eq[0]}=eq.${eq[1]}`
       const res = await fetchWithTimeout(url, {
         method: 'PATCH',
         headers: { 
@@ -101,7 +101,7 @@ export const api = {
     },
 
     delete: async (eq: [string, any]) => {
-      const url = `${API_BASE}/proxy/${table}?${eq[0]}=eq.${eq[1]}`
+      const url = `${API_BASE}/db?table=${table}&${eq[0]}=eq.${eq[1]}`
       const res = await fetchWithTimeout(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },

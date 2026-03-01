@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-// Generic proxy to forward requests to Supabase REST API
+// Simple proxy to forward requests to Supabase REST API
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
@@ -10,40 +10,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end()
   }
 
-  // Check for required env vars
   const supabaseUrl = process.env.SUPABASE_URL
   const supabaseKey = process.env.SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing env vars:', { supabaseUrl: !!supabaseUrl, supabaseKey: !!supabaseKey })
-    return res.status(500).json({ 
-      error: 'Server configuration error: Missing Supabase credentials.' 
-    })
+    return res.status(500).json({ error: 'Missing Supabase configuration' })
   }
 
   try {
-    // Get the path from the URL itself (more reliable than query params)
-    const urlPath = req.url || ''
-    const match = urlPath.match(/\/api\/proxy\/([^?]+)/)
-    const supabasePath = match ? match[1] : ''
+    const { table, ...queryParams } = req.query
     
-    if (!supabasePath) {
-      return res.status(400).json({ error: 'No table path specified' })
+    if (!table || typeof table !== 'string') {
+      return res.status(400).json({ error: 'Missing table parameter' })
     }
 
     // Build the target URL
-    const url = new URL(`${supabaseUrl}/rest/v1/${supabasePath}`)
+    const url = new URL(`${supabaseUrl}/rest/v1/${table}`)
     
-    // Forward query params (except 'path')
-    Object.entries(req.query).forEach(([key, value]) => {
-      if (key !== 'path' && value) {
+    // Forward query params
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value) {
         url.searchParams.set(key, String(value))
       }
     })
 
-    console.log('Proxy request:', req.method, url.toString())
+    console.log('DB Proxy:', req.method, url.toString())
 
-    // Build headers - only include Prefer if it has a value
+    // Build headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'apikey': supabaseKey,
@@ -62,8 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     const text = await response.text()
-    console.log('Supabase response:', response.status, text.substring(0, 500))
-
+    
     // Try to parse as JSON
     let data
     try {
@@ -74,7 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(response.status).json(data)
   } catch (err: any) {
-    console.error('Proxy error:', err)
+    console.error('DB Proxy error:', err)
     return res.status(500).json({ error: err.message })
   }
 }

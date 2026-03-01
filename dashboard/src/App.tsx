@@ -32,14 +32,34 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function App() {
   const { setUser, setLoading } = useAuthStore()
   const [initialized, setInitialized] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Add timeout to prevent infinite loading on slow networks
+    const timeoutId = setTimeout(() => {
+      if (!initialized) {
+        setError('Connection timeout. Please check your internet connection.')
+        setInitialized(true)
+        setLoading(false)
+      }
+    }, 10000) // 10 second timeout
+
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-      setInitialized(true)
-    })
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeoutId)
+        setUser(session?.user ?? null)
+        setLoading(false)
+        setInitialized(true)
+        setError(null)
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId)
+        console.error('Auth error:', err)
+        setError('Failed to connect. Please try again.')
+        setInitialized(true)
+        setLoading(false)
+      })
 
     // Listen for auth changes
     const {
@@ -48,13 +68,35 @@ function App() {
       setUser(session?.user ?? null)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(timeoutId)
+      subscription.unsubscribe()
+    }
   }, [setUser, setLoading])
 
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Connecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center p-6 bg-white rounded-lg shadow-lg max-w-sm">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }

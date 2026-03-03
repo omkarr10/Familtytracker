@@ -15,6 +15,7 @@ import {
   CheckCheck,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { SkeletonAlert } from '../components/Skeleton'
 
 interface AlertWithDevice extends Alert {
   device?: Device
@@ -30,12 +31,12 @@ const alertIcons: Record<string, typeof AlertTriangle> = {
 }
 
 const alertColors: Record<string, string> = {
-  sos: 'bg-red-100 text-red-600',
-  low_battery: 'bg-orange-100 text-orange-600',
-  sim_change: 'bg-purple-100 text-purple-600',
-  geofence_enter: 'bg-green-100 text-green-600',
-  geofence_exit: 'bg-yellow-100 text-yellow-600',
-  default: 'bg-blue-100 text-blue-600',
+  sos: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  low_battery: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+  sim_change: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+  geofence_enter: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+  geofence_exit: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400',
+  default: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
 }
 
 export default function Alerts() {
@@ -119,8 +120,15 @@ export default function Alerts() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-20 skeleton rounded" />
+        </div>
+        <div className="space-y-3">
+          <SkeletonAlert />
+          <SkeletonAlert />
+          <SkeletonAlert />
+        </div>
       </div>
     )
   }
@@ -129,9 +137,9 @@ export default function Alerts() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">Alerts</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Alerts</h1>
           {unreadCount > 0 && (
-            <span className="px-3 py-1 bg-red-500 text-white text-sm rounded-full">
+            <span className="badge-danger">
               {unreadCount} unread
             </span>
           )}
@@ -139,7 +147,7 @@ export default function Alerts() {
         {unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="btn-ghost flex items-center gap-2"
           >
             <CheckCheck className="w-5 h-5" />
             Mark all as read
@@ -152,10 +160,10 @@ export default function Alerts() {
         <button
           onClick={() => setFilter('all')}
           className={clsx(
-            'px-4 py-2 rounded-lg transition',
+            'px-4 py-2 rounded-lg transition font-medium',
             filter === 'all'
               ? 'bg-primary-600 text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              : 'bg-white dark:bg-dark-800 text-gray-600 dark:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-700 border border-gray-200 dark:border-dark-700'
           )}
         >
           All
@@ -163,10 +171,10 @@ export default function Alerts() {
         <button
           onClick={() => setFilter('unread')}
           className={clsx(
-            'px-4 py-2 rounded-lg transition',
+            'px-4 py-2 rounded-lg transition font-medium',
             filter === 'unread'
               ? 'bg-primary-600 text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              : 'bg-white dark:bg-dark-800 text-gray-600 dark:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-700 border border-gray-200 dark:border-dark-700'
           )}
         >
           Unread
@@ -175,12 +183,12 @@ export default function Alerts() {
 
       {/* Alerts List */}
       {filteredAlerts.length === 0 ? (
-        <div className="bg-white rounded-lg p-12 text-center">
-          <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
+        <div className="card p-12 text-center">
+          <Bell className="w-16 h-16 text-gray-300 dark:text-dark-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-dark-200 mb-2">
             {filter === 'unread' ? 'No unread alerts' : 'No alerts yet'}
           </h2>
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-dark-400">
             Alerts will appear here when triggered by device events
           </p>
         </div>
@@ -194,7 +202,7 @@ export default function Alerts() {
               <div
                 key={alert.id}
                 className={clsx(
-                  'bg-white rounded-lg p-4 shadow-sm transition',
+                  'card p-4 transition',
                   !alert.is_read && 'border-l-4 border-primary-500'
                 )}
               >
@@ -205,21 +213,21 @@ export default function Alerts() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-semibold text-gray-800">
+                        <h3 className="font-semibold text-gray-800 dark:text-white">
                           {alert.alert_type.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-dark-400">
                           {alert.device?.device_name || 'Unknown device'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-gray-500 dark:text-dark-400">
                           {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
                         </span>
                         {!alert.is_read && (
                           <button
                             onClick={() => markAsRead(alert.id)}
-                            className="p-1 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded transition"
+                            className="btn-ghost p-1"
                             title="Mark as read"
                           >
                             <Check className="w-4 h-4" />
@@ -228,14 +236,14 @@ export default function Alerts() {
                       </div>
                     </div>
                     {alert.message && (
-                      <p className="text-sm text-gray-600 mt-2">{alert.message}</p>
+                      <p className="text-sm text-gray-600 dark:text-dark-300 mt-2">{alert.message}</p>
                     )}
                     {alert.latitude !== null && alert.longitude !== null && (
                       <a
                         href={`https://www.google.com/maps?q=${alert.latitude},${alert.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 mt-2"
+                        className="inline-flex items-center gap-1 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 mt-2"
                       >
                         <MapPin className="w-4 h-4" />
                         View location

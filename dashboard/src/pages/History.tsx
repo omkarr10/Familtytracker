@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { Device, Location } from '../types/database'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import { Calendar, Clock, MapPin, Play, Pause, SkipForward, SkipBack } from 'lucide-react'
+import { SkeletonCard, SkeletonMap } from '../components/Skeleton'
 
 const markerIcon = new Icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
@@ -130,20 +131,20 @@ export default function History() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Location History</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Location History</h1>
       </div>
 
       {/* Controls */}
-      <div className="bg-white rounded-lg p-4 shadow-sm">
+      <div className="card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
               Device
             </label>
             <select
               value={selectedDeviceId}
               onChange={(e) => setSelectedDeviceId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              className="input w-full"
             >
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -154,7 +155,7 @@ export default function History() {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-200 mb-1">
               Date
             </label>
             <input
@@ -162,20 +163,20 @@ export default function History() {
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               max={format(new Date(), 'yyyy-MM-dd')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              className="input w-full"
             />
           </div>
 
           <div className="flex items-end gap-2">
             <button
               onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              className="btn-secondary"
             >
               Today
             </button>
             <button
               onClick={() => setSelectedDate(format(subDays(new Date(), 1), 'yyyy-MM-dd'))}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              className="btn-secondary"
             >
               Yesterday
             </button>
@@ -185,54 +186,54 @@ export default function History() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-dark-400 mb-1">
             <MapPin className="w-4 h-4" />
             <span className="text-sm">Total Points</span>
           </div>
-          <p className="text-2xl font-bold text-gray-800">{locations.length}</p>
+          <p className="text-2xl font-bold text-gray-800 dark:text-white">{locations.length}</p>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-dark-400 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-sm">First Activity</span>
           </div>
-          <p className="text-lg font-semibold text-gray-800">
+          <p className="text-lg font-semibold text-gray-800 dark:text-white">
             {locations.length > 0
               ? format(new Date(locations[0].created_at), 'HH:mm')
               : '--:--'}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-dark-400 mb-1">
             <Clock className="w-4 h-4" />
             <span className="text-sm">Last Activity</span>
           </div>
-          <p className="text-lg font-semibold text-gray-800">
+          <p className="text-lg font-semibold text-gray-800 dark:text-white">
             {locations.length > 0
               ? format(new Date(locations[locations.length - 1].created_at), 'HH:mm')
               : '--:--'}
           </p>
         </div>
-        <div className="bg-white rounded-lg p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-dark-400 mb-1">
             <Calendar className="w-4 h-4" />
             <span className="text-sm">Date</span>
           </div>
-          <p className="text-lg font-semibold text-gray-800">
+          <p className="text-lg font-semibold text-gray-800 dark:text-white">
             {format(new Date(selectedDate), 'MMM dd, yyyy')}
           </p>
         </div>
       </div>
 
       {/* Map and Playback */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="card overflow-hidden p-0">
         {/* Playback Controls */}
         {locations.length > 0 && (
-          <div className="flex items-center justify-center gap-4 p-3 border-b bg-gray-50">
+          <div className="flex items-center justify-center gap-4 p-3 border-b border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-800">
             <button
               onClick={() => setPlaybackIndex(0)}
-              className="p-2 hover:bg-gray-200 rounded-lg transition"
+              className="btn-ghost p-2"
               disabled={playbackIndex === 0}
             >
               <SkipBack className="w-5 h-5" />
@@ -245,7 +246,7 @@ export default function History() {
             </button>
             <button
               onClick={() => setPlaybackIndex(locations.length - 1)}
-              className="p-2 hover:bg-gray-200 rounded-lg transition"
+              className="btn-ghost p-2"
               disabled={playbackIndex === locations.length - 1}
             >
               <SkipForward className="w-5 h-5" />
@@ -257,10 +258,10 @@ export default function History() {
                 max={locations.length - 1}
                 value={playbackIndex}
                 onChange={(e) => setPlaybackIndex(parseInt(e.target.value))}
-                className="w-full"
+                className="w-full accent-primary-600"
               />
             </div>
-            <span className="text-sm text-gray-600 w-32 text-right">
+            <span className="text-sm text-gray-600 dark:text-dark-300 w-32 text-right">
               {currentLocation
                 ? format(new Date(currentLocation.created_at), 'HH:mm:ss')
                 : '--:--:--'}
@@ -271,12 +272,10 @@ export default function History() {
         {/* Map */}
         <div className="h-[500px]">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-            </div>
+            <div className="h-full skeleton" />
           ) : locations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <MapPin className="w-16 h-16 text-gray-300 mb-4" />
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-dark-400 bg-gray-50 dark:bg-dark-800">
+              <MapPin className="w-16 h-16 text-gray-300 dark:text-dark-600 mb-4" />
               <p>No location data for this date</p>
             </div>
           ) : (

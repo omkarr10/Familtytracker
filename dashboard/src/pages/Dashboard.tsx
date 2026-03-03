@@ -15,8 +15,10 @@ import {
   WifiOff,
   Navigation,
   RefreshCw,
+  AlertCircle,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { SkeletonDeviceCard, SkeletonMap } from '../components/Skeleton'
 
 // Custom marker icon
 const createMarkerIcon = (color: string, isOnline: boolean) =>
@@ -141,7 +143,7 @@ export default function Dashboard() {
   }
 
   const getBatteryIcon = (level: number | null) => {
-    if (level === null) return <Battery className="w-4 h-4 text-gray-400" />
+    if (level === null) return <Battery className="w-4 h-4 text-gray-400 dark:text-dark-400" />
     if (level <= 20) return <BatteryLow className="w-4 h-4 text-red-500" />
     if (level <= 50) return <BatteryMedium className="w-4 h-4 text-yellow-500" />
     return <BatteryFull className="w-4 h-4 text-green-500" />
@@ -149,8 +151,24 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-120px)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-32 skeleton rounded" />
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 skeleton rounded-lg" />
+            <div className="h-4 w-20 skeleton rounded" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-1 space-y-3">
+            <SkeletonDeviceCard />
+            <SkeletonDeviceCard />
+            <SkeletonDeviceCard />
+          </div>
+          <div className="lg:col-span-3">
+            <SkeletonMap />
+          </div>
+        </div>
       </div>
     )
   }
@@ -158,12 +176,13 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)]">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
-          <p className="text-red-700 font-medium mb-2">Error loading data</p>
-          <p className="text-red-600 text-sm mb-4">{error}</p>
+        <div className="card border border-red-200 dark:border-red-900/50 p-6 max-w-md text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+          <p className="text-red-700 dark:text-red-400 font-medium mb-2">Error loading data</p>
+          <p className="text-red-600 dark:text-red-300 text-sm mb-4">{error}</p>
           <button 
             onClick={() => { setLoading(true); fetchDevices(); }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            className="btn-primary bg-red-600 hover:bg-red-700"
           >
             Retry
           </button>
@@ -175,16 +194,16 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Live Tracking</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Live Tracking</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 rounded-lg bg-white shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="btn-ghost p-2"
           >
-            <RefreshCw className={clsx('w-5 h-5 text-gray-600', refreshing && 'animate-spin')} />
+            <RefreshCw className={clsx('w-5 h-5', refreshing && 'animate-spin')} />
           </button>
-          <span className="text-sm text-gray-500">{devices.length} device(s)</span>
+          <span className="text-sm text-gray-500 dark:text-dark-400">{devices.length} device(s)</span>
         </div>
       </div>
 
@@ -192,10 +211,10 @@ export default function Dashboard() {
         {/* Device List */}
         <div className="lg:col-span-1 space-y-3">
           {devices.length === 0 ? (
-            <div className="bg-white rounded-lg p-6 text-center">
-              <Navigation className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No devices registered</p>
-              <p className="text-sm text-gray-400 mt-1">
+            <div className="card p-6 text-center">
+              <Navigation className="w-12 h-12 text-gray-300 dark:text-dark-600 mx-auto mb-3" />
+              <p className="text-gray-500 dark:text-dark-300">No devices registered</p>
+              <p className="text-sm text-gray-400 dark:text-dark-400 mt-1">
                 Install the app on family phones to start tracking
               </p>
             </div>
@@ -205,24 +224,24 @@ export default function Dashboard() {
                 key={device.id}
                 onClick={() => setSelectedDevice(device)}
                 className={clsx(
-                  'bg-white rounded-lg p-4 cursor-pointer transition-all border-2',
+                  'card p-4 cursor-pointer transition-all border-2',
                   selectedDevice?.id === device.id
-                    ? 'border-primary-500 shadow-lg'
-                    : 'border-transparent hover:border-gray-200'
+                    ? 'border-primary-500 shadow-lg ring-2 ring-primary-500/20'
+                    : 'border-transparent hover:border-gray-200 dark:hover:border-dark-600'
                 )}
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
                     style={{ backgroundColor: deviceColors[index % deviceColors.length] }}
                   >
                     {device.device_name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-800 truncate">
+                    <h3 className="font-medium text-gray-800 dark:text-white truncate">
                       {device.device_name}
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-dark-400">
                       {device.last_seen
                         ? formatDistanceToNow(new Date(device.last_seen), {
                             addSuffix: true,
@@ -234,12 +253,12 @@ export default function Dashboard() {
                     {device.is_online ? (
                       <Wifi className="w-4 h-4 text-green-500" />
                     ) : (
-                      <WifiOff className="w-4 h-4 text-gray-400" />
+                      <WifiOff className="w-4 h-4 text-gray-400 dark:text-dark-500" />
                     )}
                     <div className="flex items-center gap-1">
                       {getBatteryIcon(device.battery_level)}
                       {device.battery_level !== null && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-dark-400">
                           {device.battery_level}%
                         </span>
                       )}
@@ -252,7 +271,7 @@ export default function Dashboard() {
         </div>
 
         {/* Map */}
-        <div className="lg:col-span-3 h-[calc(100vh-200px)] min-h-[400px] bg-white rounded-lg overflow-hidden shadow-lg">
+        <div className="lg:col-span-3 h-[calc(100vh-200px)] min-h-[400px] card overflow-hidden p-0">
           <MapContainer
             center={mapCenter}
             zoom={5}
@@ -277,7 +296,7 @@ export default function Dashboard() {
                 >
                   <Popup>
                     <div className="p-2">
-                      <h3 className="font-bold">{device.device_name}</h3>
+                      <h3 className="font-bold text-gray-900">{device.device_name}</h3>
                       <p className="text-sm text-gray-600">
                         Last update:{' '}
                         {formatDistanceToNow(new Date(device.latestLocation.created_at), {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, sessionStore } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { MapPin, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { MapPin, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -46,28 +46,37 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 dark:from-dark-950 dark:via-dark-900 dark:to-primary-950 flex items-center justify-center p-4">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-white/5 to-transparent rounded-full" />
+        <div className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative bg-white/95 dark:bg-dark-800/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md p-8 border border-white/20 dark:border-dark-700">
+        {/* Logo & Header */}
         <div className="flex flex-col items-center mb-8">
-          <img src="/logo.jpeg" alt="Family Tracker" className="w-20 h-20 mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800">Family Tracker</h1>
-          <p className="text-gray-500 mt-1">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-xl shadow-primary-500/30 mb-4">
+            <MapPin className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Family Tracker</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             {isSignUp ? 'Create your account' : 'Welcome back'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
+                className="input pl-12"
                 placeholder="you@example.com"
                 required
               />
@@ -75,16 +84,16 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition"
+                className="input pl-12 pr-12"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -92,23 +101,19 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
           {error && (
             <div
-              className={`p-3 rounded-lg text-sm ${
+              className={`p-4 rounded-xl text-sm font-medium ${
                 error.includes('Check your email')
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-red-50 text-red-700'
+                  ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800'
+                  : 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
               }`}
             >
               {error}
@@ -118,25 +123,11 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary w-full py-3.5 text-base"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
+                <Loader2 className="w-5 h-5 animate-spin" />
                 Processing...
               </span>
             ) : isSignUp ? (
@@ -147,15 +138,32 @@ export default function Login() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
+          <span className="text-gray-500 dark:text-gray-400 text-sm">
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+          </span>
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary-600 hover:text-primary-700 text-sm"
+            className="ml-2 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-semibold transition-colors"
           >
-            {isSignUp
-              ? 'Already have an account? Sign in'
-              : "Don't have an account? Sign up"}
+            {isSignUp ? 'Sign in' : 'Sign up'}
           </button>
+        </div>
+        
+        {/* Feature highlights */}
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-dark-700">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {[
+              { label: 'Live', desc: 'Tracking' },
+              { label: 'Secure', desc: 'Data' },
+              { label: '24/7', desc: 'Updates' },
+            ].map(({ label, desc }) => (
+              <div key={label}>
+                <div className="text-lg font-bold text-primary-600 dark:text-primary-400">{label}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { SkeletonDeviceCard } from '../components/Skeleton'
 
 export default function Devices() {
   const { user } = useAuthStore()
@@ -81,8 +82,16 @@ export default function Devices() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-24 skeleton rounded" />
+          <div className="h-10 w-32 skeleton rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <SkeletonDeviceCard />
+          <SkeletonDeviceCard />
+          <SkeletonDeviceCard />
+        </div>
       </div>
     )
   }
@@ -90,10 +99,10 @@ export default function Devices() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Devices</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Devices</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           Add Device
@@ -101,15 +110,15 @@ export default function Devices() {
       </div>
 
       {devices.length === 0 ? (
-        <div className="bg-white rounded-lg p-12 text-center">
-          <Smartphone className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">No devices yet</h2>
-          <p className="text-gray-500 mb-6">
+        <div className="card p-12 text-center">
+          <Smartphone className="w-16 h-16 text-gray-300 dark:text-dark-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-700 dark:text-dark-200 mb-2">No devices yet</h2>
+          <p className="text-gray-500 dark:text-dark-400 mb-6">
             Add a device to get started with tracking
           </p>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            className="btn-primary inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Add Your First Device
@@ -120,25 +129,25 @@ export default function Devices() {
           {devices.map((device) => (
             <div
               key={device.id}
-              className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition"
+              className="card p-6 hover:shadow-lg transition"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-primary-600" />
+                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
+                    <Smartphone className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-800">{device.device_name}</h3>
+                    <h3 className="font-semibold text-gray-800 dark:text-white">{device.device_name}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       {device.is_online ? (
                         <>
                           <Wifi className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-green-600">Online</span>
+                          <span className="text-sm text-green-600 dark:text-green-400">Online</span>
                         </>
                       ) : (
                         <>
-                          <WifiOff className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">Offline</span>
+                          <WifiOff className="w-4 h-4 text-gray-400 dark:text-dark-500" />
+                          <span className="text-sm text-gray-500 dark:text-dark-400">Offline</span>
                         </>
                       )}
                     </div>
@@ -147,7 +156,7 @@ export default function Devices() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => deleteDevice(device.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -156,30 +165,30 @@ export default function Devices() {
 
               <div className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Battery</span>
+                  <span className="text-gray-500 dark:text-dark-400">Battery</span>
                   <div className="flex items-center gap-2">
-                    <Battery className="w-4 h-4 text-gray-400" />
+                    <Battery className="w-4 h-4 text-gray-400 dark:text-dark-500" />
                     <span className={clsx(
                       device.battery_level !== null && device.battery_level <= 20 && 'text-red-500',
-                      device.battery_level !== null && device.battery_level > 20 && 'text-gray-700'
+                      device.battery_level !== null && device.battery_level > 20 && 'text-gray-700 dark:text-dark-200'
                     )}>
                       {device.battery_level !== null ? `${device.battery_level}%` : 'Unknown'}
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Last seen</span>
-                  <span className="text-gray-700">
+                  <span className="text-gray-500 dark:text-dark-400">Last seen</span>
+                  <span className="text-gray-700 dark:text-dark-200">
                     {device.last_seen
                       ? formatDistanceToNow(new Date(device.last_seen), { addSuffix: true })
                       : 'Never'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Device ID</span>
+                  <span className="text-gray-500 dark:text-dark-400">Device ID</span>
                   <button
                     onClick={() => copyDeviceId(device.id)}
-                    className="flex items-center gap-1 text-gray-600 hover:text-primary-600 transition"
+                    className="flex items-center gap-1 text-gray-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 transition"
                   >
                     <span className="font-mono text-xs truncate max-w-[100px]">
                       {device.id.slice(0, 8)}...
@@ -199,10 +208,10 @@ export default function Devices() {
 
       {/* Add Device Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Add New Device</h2>
-            <p className="text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="card w-full max-w-md p-6">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Add New Device</h2>
+            <p className="text-gray-600 dark:text-dark-300 mb-4">
               Enter a name for the device (e.g., "Dad's Phone", "Mom's Phone")
             </p>
             <input
@@ -210,27 +219,27 @@ export default function Devices() {
               value={newDeviceName}
               onChange={(e) => setNewDeviceName(e.target.value)}
               placeholder="Device name"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none mb-4"
+              className="input w-full mb-4"
             />
             <div className="flex gap-3">
               <button
                 onClick={() => setShowAddModal(false)}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                className="btn-secondary flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={addDevice}
                 disabled={addingDevice || !newDeviceName.trim()}
-                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+                className="btn-primary flex-1"
               >
                 {addingDevice ? 'Adding...' : 'Add Device'}
               </button>
             </div>
             
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-800 mb-2">Next Steps</h3>
-              <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+            <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-800 rounded-lg">
+              <h3 className="font-medium text-gray-800 dark:text-white mb-2">Next Steps</h3>
+              <ol className="text-sm text-gray-600 dark:text-dark-300 space-y-2 list-decimal list-inside">
                 <li>Install the Family Tracker app on the device</li>
                 <li>Copy the Device ID and enter it in the app</li>
                 <li>Grant location permissions</li>

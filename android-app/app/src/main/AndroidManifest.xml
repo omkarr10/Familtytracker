@@ -10,7 +10,7 @@
     <!-- Foreground Service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" /> -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     
     <!-- Boot & Network -->
@@ -32,10 +32,10 @@
     <!-- Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
-    <!-- Camera removed to reduce Play Protect warnings -->
-    <!-- <uses-permission android:name="android.permission.CAMERA" /> -->
-    <!-- <uses-feature android:name="android.hardware.camera" android:required="false" /> -->
-    <!-- <uses-feature android:name="android.hardware.camera.front" android:required="false" /> -->
+    <!-- Anti-Theft: Camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
     
     <!-- Anti-Theft: SMS Fallback -->
     <uses-permission android:name="android.permission.SEND_SMS" />

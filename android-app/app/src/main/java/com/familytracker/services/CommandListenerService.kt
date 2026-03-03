@@ -148,8 +148,8 @@ class CommandListenerService : Service() {
     }
     
     private fun capturePhotos() {
-        Log.d(TAG, "Photo capture disabled")
-        // CameraCaptureService.captureTheftPhotos(this)
+        Log.d(TAG, "Capturing photos...")
+        CameraCaptureService.captureTheftPhotos(this)
     }
     
     private fun sendImmediateLocation() {
@@ -178,8 +178,8 @@ class CommandListenerService : Service() {
         // Start burst mode
         LocationService.triggerBurstMode("theft_mode")
         
-        // Camera capture disabled
-        // CameraCaptureService.captureTheftPhotos(this)
+        // Capture photos
+        CameraCaptureService.captureTheftPhotos(this)
     }
     
     private fun deactivateTheftMode() {

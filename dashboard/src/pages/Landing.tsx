@@ -175,6 +175,20 @@ export default function Landing() {
                 <ChevronRight className="w-5 h-5" />
               </a>
             </div>
+            
+            {/* Installation Note */}
+            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl max-w-2xl mx-auto">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div className="text-left">
+                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Installation Instructions</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    If Play Protect blocks installation: Open the downloaded APK → tap "More details" → tap "Install anyway". 
+                    The app is open source and safe to install.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Hero Image/Dashboard Preview + App Preview */}

@@ -17,10 +17,20 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    
+    signingConfigs {
+        create("release") {
+            storeFile = file("../trackit-release-key.jks")
+            storePassword = "trackit123"
+            keyAlias = "trackit"
+            keyPassword = "trackit123"
+        }
+    }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -3,6 +3,7 @@
 # Supabase
 -keep class io.github.jan.supabase.** { *; }
 -keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
 
 # Kotlin Serialization
 -keepattributes *Annotation*, InnerClasses
@@ -25,8 +26,14 @@
 }
 
 # Room
--keep class * extends androidx.room.RoomDatabase
+-keep class * extends androidx.room.RoomDatabase { void <init>(); }
 -dontwarn androidx.room.paging.**
+
+# Missing classes (JVM/Desktop dependencies not needed on Android)
+-dontwarn java.lang.management.ManagementFactory
+-dontwarn java.lang.management.RuntimeMXBean
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+-dontwarn org.slf4j.**
 
 # DataStore
 -keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {

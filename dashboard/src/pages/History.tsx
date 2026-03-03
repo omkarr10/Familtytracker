@@ -3,10 +3,14 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-
 import { Icon, LatLngBounds } from 'leaflet'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import { useSettingsStore, mapTileLayers } from '../store/settingsStore'
 import { Device, Location } from '../types/database'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
-import { Calendar, Clock, MapPin, Play, Pause, SkipForward, SkipBack } from 'lucide-react'
+import { Calendar, Clock, MapPin, Play, Pause, SkipForward, SkipBack, Map, List } from 'lucide-react'
 import { SkeletonCard, SkeletonMap } from '../components/Skeleton'
+import { Timeline } from '../components/Timeline'
+import { MapThemeSelector } from '../components/MapThemeSelector'
+import clsx from 'clsx'
 
 const markerIcon = new Icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
@@ -40,6 +44,7 @@ function MapBounds({ locations }: { locations: Location[] }) {
 
 export default function History() {
   const { user } = useAuthStore()
+  const { mapTheme } = useSettingsStore()
   const [devices, setDevices] = useState<Device[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -47,6 +52,7 @@ export default function History() {
   const [loading, setLoading] = useState(false)
   const [playbackIndex, setPlaybackIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [viewMode, setViewMode] = useState<'map' | 'timeline'>('map')
 
   // Fetch devices
   useEffect(() => {
@@ -181,6 +187,36 @@ export default function History() {
               Yesterday
             </button>
           </div>
+
+          {/* View Toggle */}
+          <div className="flex items-end">
+            <div className="flex bg-gray-100 dark:bg-dark-700 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('map')}
+                className={clsx(
+                  'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all',
+                  viewMode === 'map'
+                    ? 'bg-white dark:bg-dark-600 text-primary-600 dark:text-primary-400 shadow'
+                    : 'text-gray-600 dark:text-dark-300 hover:text-gray-800 dark:hover:text-white'
+                )}
+              >
+                <Map className="w-4 h-4" />
+                Map
+              </button>
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={clsx(
+                  'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all',
+                  viewMode === 'timeline'
+                    ? 'bg-white dark:bg-dark-600 text-primary-600 dark:text-primary-400 shadow'
+                    : 'text-gray-600 dark:text-dark-300 hover:text-gray-800 dark:hover:text-white'
+                )}
+              >
+                <List className="w-4 h-4" />
+                Timeline
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -227,9 +263,11 @@ export default function History() {
       </div>
 
       {/* Map and Playback */}
-      <div className="card overflow-hidden p-0">
-        {/* Playback Controls */}
-        {locations.length > 0 && (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Map Section */}
+        <div className={clsx('card overflow-hidden p-0', viewMode === 'map' ? 'lg:col-span-3' : 'lg:col-span-2')}>
+          {/* Playback Controls */}
+          {locations.length > 0 && viewMode === 'map' && (
           <div className="flex items-center justify-center gap-4 p-3 border-b border-gray-200 dark:border-dark-700 bg-gray-50 dark:bg-dark-800">
             <button
               onClick={() => setPlaybackIndex(0)}
@@ -270,7 +308,8 @@ export default function History() {
         )}
 
         {/* Map */}
-        <div className="h-[500px]">
+        <div className="h-[500px] relative">
+          {viewMode === 'map' && <MapThemeSelector />}
           {loading ? (
             <div className="h-full skeleton" />
           ) : locations.length === 0 ? (
@@ -286,8 +325,9 @@ export default function History() {
               className="h-full w-full"
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                key={mapTheme}
+                attribution={mapTileLayers[mapTheme].attribution}
+                url={mapTileLayers[mapTheme].url}
               />
               <MapBounds locations={locations} />
 
@@ -320,6 +360,19 @@ export default function History() {
             </MapContainer>
           )}
         </div>
+      </div>
+
+        {/* Timeline Panel */}
+        {viewMode === 'timeline' && (
+          <div className="card p-4 lg:col-span-1 max-h-[600px] overflow-y-auto">
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Activity Timeline</h3>
+            <Timeline
+              locations={locations}
+              currentIndex={playbackIndex}
+              onLocationClick={(_, index) => setPlaybackIndex(index)}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

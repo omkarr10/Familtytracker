@@ -10,6 +10,7 @@ import History from './pages/History'
 import Geofences from './pages/Geofences'
 import Alerts from './pages/Alerts'
 import Settings from './pages/Settings'
+import { ToastContainer } from './components/Toast'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore()
@@ -54,6 +55,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ToastContainer />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route

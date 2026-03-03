@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useAppStore } from '../store/appStore'
+import { useSettingsStore } from '../store/settingsStore'
 import { Alert, Device } from '../types/database'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { SkeletonAlert } from '../components/Skeleton'
+import { toast } from '../components/Toast'
 
 interface AlertWithDevice extends Alert {
   device?: Device
@@ -42,9 +44,11 @@ const alertColors: Record<string, string> = {
 export default function Alerts() {
   const { user } = useAuthStore()
   const { setAlerts: setGlobalAlerts } = useAppStore()
+  const { soundAlerts } = useSettingsStore()
   const [alerts, setAlerts] = useState<AlertWithDevice[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const notifiedAlertsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (!user) return
@@ -81,6 +85,31 @@ export default function Alerts() {
         }))
         setAlerts(alertsWithDevices)
         setGlobalAlerts(allAlerts)
+
+        // Notify for new unread SOS alerts
+        if (soundAlerts) {
+          alertsWithDevices.forEach((alert) => {
+            if (
+              !alert.is_read &&
+              alert.alert_type === 'sos' &&
+              !notifiedAlertsRef.current.has(alert.id)
+            ) {
+              notifiedAlertsRef.current.add(alert.id)
+              toast.sos(alert.device?.device_name || 'Unknown Device', alert.message || undefined)
+            } else if (
+              !alert.is_read &&
+              (alert.alert_type === 'geofence_enter' || alert.alert_type === 'geofence_exit') &&
+              !notifiedAlertsRef.current.has(alert.id)
+            ) {
+              notifiedAlertsRef.current.add(alert.id)
+              toast.geofence(
+                alert.device?.device_name || 'Device',
+                'Geofence',
+                alert.alert_type === 'geofence_enter' ? 'entered' : 'exited'
+              )
+            }
+          })
+        }
       }
     } catch (err) {
       console.error('Error fetching alerts:', err)

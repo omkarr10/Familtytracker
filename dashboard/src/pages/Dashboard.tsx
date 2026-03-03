@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { Icon, LatLngBounds } from 'leaflet'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/appStore'
 import { useAuthStore } from '../store/authStore'
+import { useSettingsStore, mapTileLayers } from '../store/settingsStore'
 import { Device, Location } from '../types/database'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -21,6 +22,8 @@ import clsx from 'clsx'
 import { SkeletonDeviceCard, SkeletonMap } from '../components/Skeleton'
 import { LocationAddress } from '../components/LocationAddress'
 import { DeviceAvatar, getAvatarColor } from '../components/DeviceAvatar'
+import { MapThemeSelector } from '../components/MapThemeSelector'
+import { toast } from '../components/Toast'
 
 // Custom marker icon
 const createMarkerIcon = (color: string, isOnline: boolean) =>
@@ -65,10 +68,12 @@ function MapBounds({ devices }: { devices: DeviceWithLocation[] }) {
 export default function Dashboard() {
   const { user } = useAuthStore()
   const { devices, setDevices, selectedDevice, setSelectedDevice, updateDeviceLocation } = useAppStore()
+  const { mapTheme, batteryAlertThreshold, soundAlerts } = useSettingsStore()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
+  const alertedDevicesRef = useRef<Set<string>>(new Set()) // Track which devices we've alerted for
 
   const fetchDevices = async () => {
     if (!user) {
@@ -129,6 +134,31 @@ export default function Dashboard() {
     const interval = setInterval(fetchDevices, 30000)
     return () => clearInterval(interval)
   }, [user])
+
+  // Alert detection for SOS and low battery
+  useEffect(() => {
+    devices.forEach((device) => {
+      const deviceKey = `battery-${device.id}`
+      
+      // Low battery alert
+      if (
+        device.battery_level !== null &&
+        device.battery_level <= batteryAlertThreshold &&
+        !alertedDevicesRef.current.has(deviceKey)
+      ) {
+        alertedDevicesRef.current.add(deviceKey)
+        if (soundAlerts) {
+          toast.battery(device.device_name, device.battery_level)
+        }
+      } else if (
+        device.battery_level !== null &&
+        device.battery_level > batteryAlertThreshold
+      ) {
+        // Reset alert when battery is charged above threshold
+        alertedDevicesRef.current.delete(deviceKey)
+      }
+    })
+  }, [devices, batteryAlertThreshold, soundAlerts])
 
   const handleRefresh = () => {
     setRefreshing(true)
@@ -197,6 +227,65 @@ export default function Dashboard() {
             <RefreshCw className={clsx('w-5 h-5', refreshing && 'animate-spin')} />
           </button>
           <span className="text-sm text-gray-500 dark:text-dark-400">{devices.length} device(s)</span>
+        </div>
+      </div>
+
+      {/* Activity Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="card p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-500 rounded-lg">
+              <Navigation className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-blue-600 dark:text-blue-400">Active Devices</p>
+              <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                {devices.filter((d) => d.is_online).length}/{devices.length}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card p-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-green-500 rounded-lg">
+              <Wifi className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-green-600 dark:text-green-400">Online Now</p>
+              <p className="text-lg font-bold text-green-700 dark:text-green-300">
+                {devices.filter((d) => d.is_online).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card p-3 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-amber-500 rounded-lg">
+              <Battery className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-amber-600 dark:text-amber-400">Low Battery</p>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
+                {devices.filter((d) => d.battery_level !== null && d.battery_level <= 20).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-purple-500 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-purple-600 dark:text-purple-400">With Location</p>
+              <p className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                {devices.filter((d) => d.latestLocation).length}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -271,7 +360,8 @@ export default function Dashboard() {
         </div>
 
         {/* Map */}
-        <div className="lg:col-span-3 h-[calc(100vh-200px)] min-h-[400px] card overflow-hidden p-0">
+        <div className="lg:col-span-3 h-[calc(100vh-200px)] min-h-[400px] card overflow-hidden p-0 relative">
+          <MapThemeSelector />
           <MapContainer
             center={mapCenter}
             zoom={5}
@@ -279,8 +369,9 @@ export default function Dashboard() {
             className="h-full w-full"
           >
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              key={mapTheme}
+              attribution={mapTileLayers[mapTheme].attribution}
+              url={mapTileLayers[mapTheme].url}
             />
             <MapBounds devices={devices} />
             

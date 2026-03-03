@@ -1,14 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
+import { useSettingsStore } from '../store/settingsStore'
 import { api } from '../lib/api'
-import { User, Lock, Shield, Info } from 'lucide-react'
+import { notificationService, NotificationPermissionStatus } from '../lib/notifications'
+import { User, Lock, Shield, Info, Bell, Volume2, Battery, Map } from 'lucide-react'
+import clsx from 'clsx'
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const {
+    soundAlerts,
+    setSoundAlerts,
+    batteryAlertThreshold,
+    setBatteryAlertThreshold,
+    mapTheme,
+    setMapTheme,
+  } = useSettingsStore()
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermissionStatus>('default')
+
+  useEffect(() => {
+    // Initialize notification service and get permission status
+    notificationService.init().then(setNotificationPermission)
+  }, [])
+
+  const requestNotificationPermission = async () => {
+    const permission = await notificationService.requestPermission()
+    setNotificationPermission(permission)
+  }
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,6 +152,101 @@ export default function Settings() {
             {loading ? 'Updating...' : 'Update Password'}
           </button>
         </form>
+      </div>
+
+      {/* Notification Settings */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+            <Bell className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Notifications</h2>
+        </div>
+        <div className="space-y-4">
+          {/* Browser Notifications */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-800 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-800 dark:text-white">Push Notifications</p>
+              <p className="text-sm text-gray-500 dark:text-dark-400">
+                Get alerts even when the app is in background
+              </p>
+            </div>
+            {notificationPermission === 'granted' ? (
+              <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm rounded-full">
+                Enabled
+              </span>
+            ) : notificationPermission === 'denied' ? (
+              <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm rounded-full">
+                Blocked
+              </span>
+            ) : notificationPermission === 'unsupported' ? (
+              <span className="px-3 py-1 bg-gray-100 dark:bg-dark-700 text-gray-600 dark:text-dark-400 text-sm rounded-full">
+                Not Supported
+              </span>
+            ) : (
+              <button
+                onClick={requestNotificationPermission}
+                className="btn-primary text-sm px-3 py-1"
+              >
+                Enable
+              </button>
+            )}
+          </div>
+
+          {/* Sound Alerts */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Volume2 className="w-5 h-5 text-gray-500 dark:text-dark-400" />
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">Sound Alerts</p>
+                <p className="text-sm text-gray-500 dark:text-dark-400">
+                  Play sound for SOS and critical alerts
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSoundAlerts(!soundAlerts)}
+              className={clsx(
+                'relative w-12 h-6 rounded-full transition-colors',
+                soundAlerts ? 'bg-primary-600' : 'bg-gray-300 dark:bg-dark-600'
+              )}
+            >
+              <span
+                className={clsx(
+                  'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
+                  soundAlerts ? 'left-7' : 'left-1'
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Battery Alert Threshold */}
+          <div className="p-3 bg-gray-50 dark:bg-dark-800 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <Battery className="w-5 h-5 text-gray-500 dark:text-dark-400" />
+              <div>
+                <p className="font-medium text-gray-800 dark:text-white">Low Battery Alert</p>
+                <p className="text-sm text-gray-500 dark:text-dark-400">
+                  Alert when device battery falls below {batteryAlertThreshold}%
+                </p>
+              </div>
+            </div>
+            <input
+              type="range"
+              min="5"
+              max="50"
+              step="5"
+              value={batteryAlertThreshold}
+              onChange={(e) => setBatteryAlertThreshold(parseInt(e.target.value))}
+              className="w-full accent-primary-600"
+            />
+            <div className="flex justify-between text-xs text-gray-500 dark:text-dark-400 mt-1">
+              <span>5%</span>
+              <span className="font-medium text-primary-600">{batteryAlertThreshold}%</span>
+              <span>50%</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* App Info */}

@@ -10,11 +10,15 @@
     <!-- Foreground Service -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     
     <!-- Boot & Network -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     
     <!-- Battery Optimization -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
@@ -27,6 +31,27 @@
     
     <!-- Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Anti-Theft: Camera -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
+    
+    <!-- Anti-Theft: SMS Fallback -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    
+    <!-- Anti-Theft: Alarm & Vibration -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    
+    <!-- Anti-Theft: Device Admin for Lock/Wipe -->
+    <uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    
+    <!-- Contacts for Emergency Contact Selection -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:name=".FamilyTrackerApp"
@@ -48,12 +73,39 @@
             </intent-filter>
         </activity>
 
+        <!-- Emergency Contacts Activity -->
+        <activity
+            android:name=".EmergencyContactsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FamilyTracker"
+            android:parentActivityName=".MainActivity" />
+
         <!-- Location Tracking Service -->
         <service
             android:name=".services.LocationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Anti-Theft: Camera Capture Service -->
+        <service
+            android:name=".services.CameraCaptureService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
+
+        <!-- Anti-Theft: Alarm Service -->
+        <service
+            android:name=".services.AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- Anti-Theft: Command Listener Service -->
+        <service
+            android:name=".services.CommandListenerService"
+            android:enabled="true"
+            android:exported="false" />
 
         <!-- Boot Receiver -->
         <receiver
@@ -84,6 +136,47 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.SIM_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Anti-Theft: Motion Detection Receiver -->
+        <receiver
+            android:name=".receivers.MotionDetectionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Anti-Theft: Connectivity Change Receiver -->
+        <receiver
+            android:name=".receivers.ConnectivityReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+                <action android:name="android.intent.action.AIRPLANE_MODE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Anti-Theft: SMS Receiver for Remote Commands -->
+        <receiver
+            android:name=".receivers.SmsCommandReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter android:priority="999">
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Device Admin Receiver for Lock/Wipe -->
+        <receiver
+            android:name=".receivers.DeviceAdminReceiver"
+            android:exported="true"
+            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin_policies" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
 

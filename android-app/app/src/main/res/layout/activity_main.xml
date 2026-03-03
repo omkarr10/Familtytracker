@@ -31,7 +31,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Family Tracker"
+                android:text="TrackIt"
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:textColor="#1F2937" />
@@ -127,7 +127,70 @@
             android:enabled="false"
             app:cornerRadius="12dp"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="16dp" />
+
+        <!-- Emergency Contacts Section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            android:layout_marginBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_person"
+                        app:tint="#EF4444"
+                        android:layout_marginEnd="8dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Emergency Contacts"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#1F2937" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvEmergencyContactsStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No contacts set"
+                    android:textSize="13sp"
+                    android:textColor="#9CA3AF"
+                    android:layout_marginBottom="12dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSetupEmergencyContacts"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Setup Emergency Contacts"
+                    android:textSize="14sp"
+                    app:cornerRadius="10dp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    app:strokeColor="#EF4444"
+                    android:textColor="#EF4444"
+                    app:icon="@drawable/ic_add_contact"
+                    app:iconTint="#EF4444"
+                    app:iconGravity="start" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
         <!-- SOS Button -->
         <TextView

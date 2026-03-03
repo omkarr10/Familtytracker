@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { sessionStore } from './lib/api'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
+import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Devices from './pages/Devices'
@@ -57,9 +58,10 @@ function App() {
     <BrowserRouter>
       <ToastContainer />
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Layout />

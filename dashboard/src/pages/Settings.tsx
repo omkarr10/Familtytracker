@@ -262,7 +262,7 @@ export default function Settings() {
           <ol className="list-decimal list-inside space-y-2 mt-3">
             <li>Go to <strong className="text-gray-800 dark:text-white">Devices</strong> page and add a new device</li>
             <li>Copy the Device ID</li>
-            <li>Install the Family Tracker app on the Android phone</li>
+            <li>Install the TrackIt app on the Android phone</li>
             <li>Open the app and paste the Device ID</li>
             <li>Grant location permissions</li>
             <li>The device will start sending location updates!</li>
@@ -279,7 +279,7 @@ export default function Settings() {
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">About</h2>
         </div>
         <div className="text-sm text-gray-600 dark:text-dark-300 space-y-2">
-          <p><strong className="text-gray-800 dark:text-white">Family Tracker</strong> v1.0.0</p>
+          <p><strong className="text-gray-800 dark:text-white">TrackIt</strong> v1.0.0</p>
           <p>A secure family location tracking system.</p>
           <p className="text-gray-400 dark:text-dark-500">
             Built with React, Supabase, and Leaflet

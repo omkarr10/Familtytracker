@@ -17,6 +17,7 @@ import {
   Navigation,
   RefreshCw,
   AlertCircle,
+  Shield,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { SkeletonDeviceCard, SkeletonMap } from '../components/Skeleton'
@@ -24,6 +25,7 @@ import { LocationAddress } from '../components/LocationAddress'
 import { DeviceAvatar, getAvatarColor } from '../components/DeviceAvatar'
 import { MapThemeSelector } from '../components/MapThemeSelector'
 import { toast } from '../components/Toast'
+import { AntiTheftPanel } from '../components/AntiTheftPanel'
 
 // Custom marker icon
 const createMarkerIcon = (color: string, isOnline: boolean) =>
@@ -74,6 +76,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
   const alertedDevicesRef = useRef<Set<string>>(new Set()) // Track which devices we've alerted for
+  const [antiTheftDevice, setAntiTheftDevice] = useState<Device | null>(null)
 
   const fetchDevices = async () => {
     if (!user) {
@@ -352,6 +355,16 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setAntiTheftDevice(device)
+                      }}
+                      className="p-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                      title="Anti-Theft Controls"
+                    >
+                      <Shield className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -417,6 +430,14 @@ export default function Dashboard() {
           </MapContainer>
         </div>
       </div>
+
+      {/* Anti-Theft Panel */}
+      {antiTheftDevice && (
+        <AntiTheftPanel
+          device={antiTheftDevice}
+          onClose={() => setAntiTheftDevice(null)}
+        />
+      )}
     </div>
   )
 }

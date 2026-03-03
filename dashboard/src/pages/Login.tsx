@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { api, sessionStore } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { MapPin, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { MapPin, Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -25,7 +25,7 @@ export default function Login() {
         if (data.session) {
           sessionStore.save(data.session)
           setUser(data.user)
-          navigate('/')
+          navigate('/dashboard')
         } else if (data.user) {
           setError('Check your email for the confirmation link!')
         }
@@ -34,7 +34,7 @@ export default function Login() {
         if (data.session) {
           sessionStore.save(data.session)
           setUser(data.user)
-          navigate('/')
+          navigate('/dashboard')
         }
       }
     } catch (err: any) {
@@ -47,7 +47,16 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 dark:from-dark-950 dark:via-dark-900 dark:to-primary-950 flex items-center justify-center p-4">
-      {/* Background decoration */}
+      {/* Back to home */}
+      <Link 
+        to="/" 
+        className="absolute top-4 left-4 flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        Back to home
+      </Link>
+      
+      {/* Background decoration */}}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-white/5 to-transparent rounded-full" />
         <div className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-full blur-3xl" />
@@ -59,7 +68,7 @@ export default function Login() {
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-xl shadow-primary-500/30 mb-4">
             <MapPin className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Family Tracker</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">TrackIt</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             {isSignUp ? 'Create your account' : 'Welcome back'}
           </p>

@@ -257,7 +257,7 @@ export default function Devices() {
             <div className="mt-6 p-4 bg-gray-50 dark:bg-dark-800 rounded-lg">
               <h3 className="font-medium text-gray-800 dark:text-white mb-2">Next Steps</h3>
               <ol className="text-sm text-gray-600 dark:text-dark-300 space-y-2 list-decimal list-inside">
-                <li>Install the Family Tracker app on the device</li>
+                <li>Install the TrackIt app on the device</li>
                 <li>Copy the Device ID and enter it in the app</li>
                 <li>Grant location permissions</li>
                 <li>The device will appear on your map!</li>

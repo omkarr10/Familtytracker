@@ -84,4 +84,76 @@ object SupabaseClient {
             }
         }
     }
+    
+    // ============== ANTI-THEFT METHODS ==============
+    
+    suspend fun insertTheftPhoto(
+        deviceId: String,
+        photoBase64: String,
+        isFrontCamera: Boolean
+    ) {
+        client.from("theft_photos").insert(
+            buildJsonObject {
+                put("device_id", deviceId)
+                put("photo_base64", photoBase64)
+                put("is_front_camera", isFrontCamera)
+                put("created_at", Instant.now().toString())
+            }
+        )
+    }
+    
+    suspend fun getPendingCommands(deviceId: String): List<RemoteCommand> {
+        return try {
+            client.from("remote_commands")
+                .select {
+                    filter {
+                        eq("device_id", deviceId)
+                        eq("executed", false)
+                    }
+                }
+                .decodeList<RemoteCommand>()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    suspend fun markCommandExecuted(commandId: String) {
+        client.from("remote_commands").update(
+            buildJsonObject {
+                put("executed", true)
+                put("executed_at", Instant.now().toString())
+            }
+        ) {
+            filter {
+                eq("id", commandId)
+            }
+        }
+    }
+    
+    suspend fun insertTheftEvent(
+        deviceId: String,
+        eventType: String,
+        score: Int,
+        latitude: Double? = null,
+        longitude: Double? = null
+    ) {
+        client.from("theft_events").insert(
+            buildJsonObject {
+                put("device_id", deviceId)
+                put("event_type", eventType)
+                put("score", score)
+                latitude?.let { put("latitude", it) }
+                longitude?.let { put("longitude", it) }
+                put("created_at", Instant.now().toString())
+            }
+        )
+    }
 }
+
+@kotlinx.serialization.Serializable
+data class RemoteCommand(
+    val id: String,
+    val device_id: String,
+    val command: String,
+    val executed: Boolean = false
+)

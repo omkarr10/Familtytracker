@@ -21,12 +21,12 @@ import { useState } from 'react'
 import clsx from 'clsx'
 
 const navItems = [
-  { to: '/', icon: MapPin, label: 'Live Tracking' },
-  { to: '/devices', icon: Smartphone, label: 'Devices' },
-  { to: '/history', icon: History, label: 'History' },
-  { to: '/geofences', icon: Shield, label: 'Geofences' },
-  { to: '/alerts', icon: Bell, label: 'Alerts' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/dashboard', icon: MapPin, label: 'Live Tracking' },
+  { to: '/dashboard/devices', icon: Smartphone, label: 'Devices' },
+  { to: '/dashboard/history', icon: History, label: 'History' },
+  { to: '/dashboard/geofences', icon: Shield, label: 'Geofences' },
+  { to: '/dashboard/alerts', icon: Bell, label: 'Alerts' },
+  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ]
 
 function ThemeToggle() {
@@ -117,7 +117,7 @@ export default function Layout() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
               <MapPin className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-800 dark:text-white">FamilyTracker</span>
+            <span className="text-lg font-bold text-gray-800 dark:text-white">TrackIt</span>
           </div>
           <button
             className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"

@@ -17,6 +17,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.familytracker.data.PreferencesManager
 import com.familytracker.databinding.ActivityMainBinding
+import com.familytracker.receivers.MotionDetectionReceiver
+import com.familytracker.services.CommandListenerService
 import com.familytracker.services.LocationService
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -25,6 +27,14 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityMainBinding
     private lateinit var preferencesManager: PreferencesManager
+    
+    private val emergencyContactsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            updateEmergencyContactsStatus()
+        }
+    }
     
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -83,6 +93,37 @@ class MainActivity : AppCompatActivity() {
         
         binding.btnSos.setOnClickListener {
             sendSOS()
+        }
+        
+        binding.btnSetupEmergencyContacts.setOnClickListener {
+            openEmergencyContacts()
+        }
+        
+        updateEmergencyContactsStatus()
+    }
+    
+    private fun openEmergencyContacts() {
+        val intent = Intent(this, EmergencyContactsActivity::class.java)
+        emergencyContactsLauncher.launch(intent)
+    }
+    
+    private fun updateEmergencyContactsStatus() {
+        lifecycleScope.launch {
+            val authorizedNumbers = preferencesManager.authorizedNumbers.first()
+            val count = authorizedNumbers.size
+            
+            binding.tvEmergencyContactsStatus.text = when (count) {
+                0 -> "No contacts set - SMS alerts disabled"
+                1 -> "1 contact configured"
+                else -> "$count contacts configured"
+            }
+            
+            binding.tvEmergencyContactsStatus.setTextColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    if (count > 0) android.R.color.holo_green_dark else android.R.color.darker_gray
+                )
+            )
         }
     }
     
@@ -209,19 +250,35 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun startTracking() {
+        // Start location service
         val intent = Intent(this, LocationService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
             startService(intent)
         }
+        
+        // Start command listener for remote commands
+        CommandListenerService.start(this)
+        
+        // Start motion detection
+        MotionDetectionReceiver.startMonitoring(this)
+        
         updateTrackingStatus(true)
         Toast.makeText(this, "Tracking started", Toast.LENGTH_SHORT).show()
     }
     
     private fun stopTracking() {
+        // Stop location service
         val intent = Intent(this, LocationService::class.java)
         stopService(intent)
+        
+        // Stop command listener
+        CommandListenerService.stop(this)
+        
+        // Stop motion detection  
+        MotionDetectionReceiver.stopMonitoring(this)
+        
         updateTrackingStatus(false)
         Toast.makeText(this, "Tracking stopped", Toast.LENGTH_SHORT).show()
     }
@@ -263,5 +320,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateTrackingStatus(LocationService.isRunning)
+        updateEmergencyContactsStatus()
     }
 }

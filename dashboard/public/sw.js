@@ -1,4 +1,4 @@
-// Service Worker for Family Tracker PWA
+// Service Worker for TrackIt PWA
 const CACHE_NAME = 'family-tracker-v1'
 const urlsToCache = [
   '/',
@@ -55,7 +55,7 @@ self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {}
   
   const options = {
-    body: data.message || 'New notification from Family Tracker',
+    body: data.message || 'New notification from TrackIt',
     icon: '/logo.jpeg',
     badge: '/logo.jpeg',
     vibrate: [200, 100, 200],
@@ -79,7 +79,7 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Family Tracker', options)
+    self.registration.showNotification(data.title || 'TrackIt', options)
   )
 })
 

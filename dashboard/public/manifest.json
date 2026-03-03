@@ -1,7 +1,7 @@
 {
-  "name": "Family Tracker",
-  "short_name": "FamTrack",
-  "description": "Track your family's location in real-time",
+  "name": "TrackIt - Family Safety",
+  "short_name": "TrackIt",
+  "description": "Real-time family location tracking with anti-theft protection",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1e293b",

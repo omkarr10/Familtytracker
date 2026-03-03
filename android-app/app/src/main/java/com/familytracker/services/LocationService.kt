@@ -11,6 +11,8 @@ import androidx.core.app.NotificationCompat
 import com.familytracker.FamilyTrackerApp
 import com.familytracker.MainActivity
 import com.familytracker.R
+import com.familytracker.data.CachedLocation
+import com.familytracker.data.OfflineLocationCache
 import com.familytracker.data.PreferencesManager
 import com.familytracker.data.SupabaseClient
 import com.google.android.gms.location.*
@@ -108,8 +110,19 @@ class LocationService : Service() {
                                 eventType = eventType
                             )
                         } catch (e: Exception) {
-                            Log.e(TAG, "Failed to send location", e)
-                            // TODO: Queue for later
+                            Log.e(TAG, "Failed to send location, caching offline", e)
+                            // Cache location for later sync
+                            OfflineLocationCache.cacheLocation(
+                                this@LocationService,
+                                CachedLocation(
+                                    latitude = location.latitude,
+                                    longitude = location.longitude,
+                                    accuracy = location.accuracy,
+                                    speed = location.speed,
+                                    eventType = eventType,
+                                    timestamp = System.currentTimeMillis()
+                                )
+                            )
                         }
                     }
                     
@@ -268,7 +281,7 @@ class LocationService : Service() {
         )
         
         return NotificationCompat.Builder(this, FamilyTrackerApp.CHANNEL_ID)
-            .setContentTitle("Family Tracker")
+            .setContentTitle("TrackIt")
             .setContentText("Location tracking is active")
             .setSmallIcon(R.drawable.ic_location)
             .setContentIntent(pendingIntent)

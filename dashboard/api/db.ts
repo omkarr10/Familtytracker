@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, Prefer')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, apikey, Prefer, x-access-token')
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -44,11 +44,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('DB Proxy:', req.method, targetUrl)
 
-    // Build headers
+    // Get user's access token from header (for RLS)
+    const userToken = req.headers['x-access-token'] as string | undefined
+
+    // Build headers - use user token if available, otherwise anon key
+    const authToken = userToken || supabaseKey
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
+      'Authorization': `Bearer ${authToken}`,
     }
     
     if (req.headers.prefer) {

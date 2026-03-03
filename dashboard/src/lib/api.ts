@@ -26,6 +26,18 @@ export const sessionStore = {
   },
 }
 
+// Get auth headers with user's access token for RLS
+function getAuthHeaders(): Record<string, string> {
+  const session = sessionStore.getSession()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (session?.access_token) {
+    headers['x-access-token'] = session.access_token
+  }
+  return headers
+}
+
 // Helper for fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 15000) {
   const controller = new AbortController()
@@ -107,7 +119,9 @@ export const api = {
       }
 
       console.log('API call:', url)
-      const res = await fetchWithTimeout(url)
+      const res = await fetchWithTimeout(url, {
+        headers: getAuthHeaders(),
+      })
       const data = await res.json()
       if (!res.ok) {
         console.error('API error:', res.status, data)
@@ -117,12 +131,12 @@ export const api = {
     },
 
     insert: async (record: any) => {
+      const headers = getAuthHeaders()
+      headers['Prefer'] = 'return=representation'
+      
       const res = await fetchWithTimeout(`${API_BASE}/db?table=${table}`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
+        headers,
         body: JSON.stringify(record),
       })
       const data = await res.json()
@@ -132,12 +146,12 @@ export const api = {
 
     update: async (record: any, eq: [string, any]) => {
       const url = `${API_BASE}/db?table=${table}&${eq[0]}=eq.${eq[1]}`
+      const headers = getAuthHeaders()
+      headers['Prefer'] = 'return=representation'
+      
       const res = await fetchWithTimeout(url, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
+        headers,
         body: JSON.stringify(record),
       })
       const data = await res.json()
@@ -149,7 +163,7 @@ export const api = {
       const url = `${API_BASE}/db?table=${table}&${eq[0]}=eq.${eq[1]}`
       const res = await fetchWithTimeout(url, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
       })
       if (!res.ok) {
         const data = await res.json()

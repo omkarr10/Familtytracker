@@ -7,6 +7,7 @@ node_modules/
 dist/
 build/
 *.apk
+!dashboard/public/trackit.apk
 
 # Environment files (keep .env.example, exclude actual .env)
 .env

@@ -14,7 +14,8 @@ import {
   Map,
   Users,
   AlertTriangle,
-  Volume2
+  Volume2,
+  Download
 } from 'lucide-react'
 
 export default function Landing() {
@@ -159,6 +160,14 @@ export default function Landing() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <a 
+                href="/trackit.apk" 
+                download="trackit.apk"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold text-lg shadow-xl shadow-green-500/25 hover:shadow-2xl hover:shadow-green-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              >
+                <Download className="w-5 h-5" />
+                Download APK
+              </a>
+              <a 
                 href="#features" 
                 className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gray-100 dark:bg-dark-800 text-gray-700 dark:text-gray-300 font-semibold text-lg hover:bg-gray-200 dark:hover:bg-dark-700 transition-colors flex items-center justify-center gap-2"
               >
@@ -168,21 +177,100 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Hero Image/Dashboard Preview */}
+          {/* Hero Image/Dashboard Preview + App Preview */}
           <div className="mt-16 relative">
-            <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-dark-950 to-transparent z-10 pointer-events-none h-32 bottom-0 top-auto" />
-            <div className="bg-white dark:bg-dark-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-dark-700 overflow-hidden">
-              <div className="h-8 bg-gray-100 dark:bg-dark-700 flex items-center px-4 gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
+            <div className="grid lg:grid-cols-3 gap-8 items-center">
+              {/* Mobile App Preview */}
+              <div className="lg:col-span-1 flex justify-center">
+                <div className="relative">
+                  {/* Phone Frame */}
+                  <div className="w-64 h-[520px] bg-gray-900 rounded-[3rem] p-3 shadow-2xl">
+                    <div className="w-full h-full bg-dark-800 rounded-[2.5rem] overflow-hidden relative">
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-gray-900 rounded-b-2xl z-10" />
+                      {/* App Screen Content */}
+                      <div className="w-full h-full bg-gradient-to-br from-dark-900 to-dark-950 pt-10 px-4">
+                        {/* App Header */}
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                          <span className="text-lg font-bold text-white">TrackIt</span>
+                          <div className="ml-auto flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-xs text-green-400">Active</span>
+                          </div>
+                        </div>
+                        
+                        {/* Status Card */}
+                        <div className="bg-dark-800 rounded-2xl p-4 mb-4 border border-dark-700">
+                          <div className="text-center">
+                            <div className="text-3xl mb-2">📍</div>
+                            <div className="text-sm text-gray-400">Tracking Active</div>
+                            <div className="text-xs text-primary-400 mt-1">Last update: Just now</div>
+                          </div>
+                        </div>
+                        
+                        {/* SOS Button */}
+                        <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-4 mb-4 text-center shadow-lg shadow-red-500/25">
+                          <div className="text-2xl mb-1">🆘</div>
+                          <div className="text-white font-bold">SOS Alert</div>
+                          <div className="text-red-200 text-xs">Tap to send emergency</div>
+                        </div>
+                        
+                        {/* Features Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-dark-800 rounded-xl p-3 text-center border border-dark-700">
+                            <Camera className="w-5 h-5 text-primary-400 mx-auto mb-1" />
+                            <div className="text-xs text-gray-400">Capture</div>
+                          </div>
+                          <div className="bg-dark-800 rounded-xl p-3 text-center border border-dark-700">
+                            <Volume2 className="w-5 h-5 text-primary-400 mx-auto mb-1" />
+                            <div className="text-xs text-gray-400">Alarm</div>
+                          </div>
+                          <div className="bg-dark-800 rounded-xl p-3 text-center border border-dark-700">
+                            <Shield className="w-5 h-5 text-primary-400 mx-auto mb-1" />
+                            <div className="text-xs text-gray-400">Anti-Theft</div>
+                          </div>
+                          <div className="bg-dark-800 rounded-xl p-3 text-center border border-dark-700">
+                            <MessageSquare className="w-5 h-5 text-primary-400 mx-auto mb-1" />
+                            <div className="text-xs text-gray-400">SMS</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Download Badge */}
+                  <a 
+                    href="/trackit.apk" 
+                    download="trackit.apk"
+                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    Download APK
+                  </a>
+                </div>
               </div>
-              <div className="p-1 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-800 dark:to-dark-900">
-                <img 
-                  src="/dashboard.png" 
-                  alt="TrackIt Dashboard - Interactive Map View" 
-                  className="w-full rounded-lg shadow-inner"
-                />
+              
+              {/* Dashboard Preview */}
+              <div className="lg:col-span-2 relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-dark-950 to-transparent z-10 pointer-events-none h-32 bottom-0 top-auto" />
+                <div className="bg-white dark:bg-dark-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                  <div className="h-8 bg-gray-100 dark:bg-dark-700 flex items-center px-4 gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <span className="ml-4 text-xs text-gray-500 dark:text-gray-400">TrackIt Dashboard</span>
+                  </div>
+                  <div className="p-1 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-800 dark:to-dark-900">
+                    <img 
+                      src="/dashboard.png" 
+                      alt="TrackIt Dashboard - Interactive Map View" 
+                      className="w-full rounded-lg shadow-inner"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -419,6 +507,14 @@ export default function Landing() {
               Get Started Free
               <ArrowRight className="w-5 h-5" />
             </Link>
+            <a 
+              href="/trackit.apk" 
+              download="trackit.apk"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold text-lg shadow-xl shadow-green-500/25 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              Download Android App
+            </a>
             <a 
               href="https://github.com/yourusername/trackit"
               target="_blank"

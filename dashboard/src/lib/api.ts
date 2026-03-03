@@ -1,6 +1,31 @@
 // API client that uses Vercel proxy to bypass ISP blocking
 const API_BASE = '/api'
 
+// Session storage helper (defined first so it can be used by api)
+export const sessionStore = {
+  save: (session: any) => {
+    if (session) {
+      localStorage.setItem('ft_session', JSON.stringify(session))
+      localStorage.setItem('ft_user', JSON.stringify(session.user))
+    }
+  },
+  
+  getSession: () => {
+    const session = localStorage.getItem('ft_session')
+    return session ? JSON.parse(session) : null
+  },
+  
+  getUser: () => {
+    const user = localStorage.getItem('ft_user')
+    return user ? JSON.parse(user) : null
+  },
+  
+  clear: () => {
+    localStorage.removeItem('ft_session')
+    localStorage.removeItem('ft_user')
+  },
+}
+
 // Helper for fetch with timeout
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = 15000) {
   const controller = new AbortController()
@@ -44,6 +69,22 @@ export const api = {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Signup failed')
+      return data
+    },
+
+    updatePassword: async (password: string) => {
+      const session = sessionStore.getSession()
+      if (!session?.access_token) {
+        throw new Error('Not logged in')
+      }
+      
+      const res = await fetchWithTimeout(`${API_BASE}/auth/update-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, accessToken: session.access_token }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Password update failed')
       return data
     },
   },
@@ -117,29 +158,4 @@ export const api = {
       return { data: null, error: null }
     },
   }),
-}
-
-// Session storage helper
-export const sessionStore = {
-  save: (session: any) => {
-    if (session) {
-      localStorage.setItem('ft_session', JSON.stringify(session))
-      localStorage.setItem('ft_user', JSON.stringify(session.user))
-    }
-  },
-  
-  getSession: () => {
-    const session = localStorage.getItem('ft_session')
-    return session ? JSON.parse(session) : null
-  },
-  
-  getUser: () => {
-    const user = localStorage.getItem('ft_user')
-    return user ? JSON.parse(user) : null
-  },
-  
-  clear: () => {
-    localStorage.removeItem('ft_session')
-    localStorage.removeItem('ft_user')
-  },
 }

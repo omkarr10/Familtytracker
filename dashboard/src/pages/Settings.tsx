@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import { User, Lock, Shield } from 'lucide-react'
 
 export default function Settings() {
@@ -26,16 +26,13 @@ export default function Settings() {
     setLoading(true)
     setMessage(null)
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
-
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
-    } else {
+    try {
+      await api.auth.updatePassword(newPassword)
       setMessage({ type: 'success', text: 'Password updated successfully' })
       setNewPassword('')
       setConfirmPassword('')
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to update password' })
     }
 
     setLoading(false)

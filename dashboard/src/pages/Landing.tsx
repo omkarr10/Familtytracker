@@ -108,7 +108,7 @@ export default function Landing() {
             </div>
             <div className="flex items-center gap-4">
               <a 
-                href="https://github.com/yourusername/trackit" 
+                href="https://github.com/omkarr10/Familtytracker" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -516,7 +516,7 @@ export default function Landing() {
               Download Android App
             </a>
             <a 
-              href="https://github.com/yourusername/trackit"
+              href="https://github.com/omkarr10/Familtytracker"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold text-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
@@ -543,7 +543,7 @@ export default function Landing() {
             </p>
             <div className="flex items-center gap-4">
               <a 
-                href="https://github.com/yourusername/trackit" 
+                href="https://github.com/omkarr10/Familtytracker" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"

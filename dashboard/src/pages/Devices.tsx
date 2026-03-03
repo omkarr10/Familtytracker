@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { SkeletonDeviceCard } from '../components/Skeleton'
+import { DeviceAvatar, getAvatarColor } from '../components/DeviceAvatar'
 
 export default function Devices() {
   const { user } = useAuthStore()
@@ -74,6 +75,17 @@ export default function Devices() {
     }
   }
 
+  const updateDeviceAvatar = async (deviceId: string, avatarUrl: string | null) => {
+    try {
+      await api.from('devices').update({ avatar_url: avatarUrl }, ['id', deviceId])
+      setDevices(devices.map((d) => 
+        d.id === deviceId ? { ...d, avatar_url: avatarUrl } : d
+      ))
+    } catch (err) {
+      console.error('Error updating avatar:', err)
+    }
+  }
+
   const copyDeviceId = (id: string) => {
     navigator.clipboard.writeText(id)
     setCopiedId(id)
@@ -126,16 +138,21 @@ export default function Devices() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {devices.map((device) => (
+          {devices.map((device, index) => (
             <div
               key={device.id}
               className="card p-6 hover:shadow-lg transition"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                    <Smartphone className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-                  </div>
+                  <DeviceAvatar
+                    name={device.device_name}
+                    avatarUrl={device.avatar_url}
+                    color={getAvatarColor(index)}
+                    size="lg"
+                    editable
+                    onAvatarChange={(url) => updateDeviceAvatar(device.id, url)}
+                  />
                   <div>
                     <h3 className="font-semibold text-gray-800 dark:text-white">{device.device_name}</h3>
                     <div className="flex items-center gap-2 mt-1">

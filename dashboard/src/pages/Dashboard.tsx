@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { SkeletonDeviceCard, SkeletonMap } from '../components/Skeleton'
+import { LocationAddress } from '../components/LocationAddress'
+import { DeviceAvatar, getAvatarColor } from '../components/DeviceAvatar'
 
 // Custom marker icon
 const createMarkerIcon = (color: string, isOnline: boolean) =>
@@ -33,15 +35,6 @@ const createMarkerIcon = (color: string, isOnline: boolean) =>
     iconAnchor: [18, 36],
     popupAnchor: [0, -36],
   })
-
-const deviceColors = [
-  '#3b82f6', // blue
-  '#ef4444', // red
-  '#22c55e', // green
-  '#f59e0b', // amber
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-]
 
 interface DeviceWithLocation extends Device {
   latestLocation?: Location
@@ -231,12 +224,12 @@ export default function Dashboard() {
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
-                    style={{ backgroundColor: deviceColors[index % deviceColors.length] }}
-                  >
-                    {device.device_name.charAt(0).toUpperCase()}
-                  </div>
+                  <DeviceAvatar
+                    name={device.device_name}
+                    avatarUrl={device.avatar_url}
+                    color={getAvatarColor(index)}
+                    size="md"
+                  />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-gray-800 dark:text-white truncate">
                       {device.device_name}
@@ -248,6 +241,13 @@ export default function Dashboard() {
                           })
                         : 'Never seen'}
                     </p>
+                    {device.latestLocation && (
+                      <LocationAddress 
+                        latitude={device.latestLocation.latitude}
+                        longitude={device.latestLocation.longitude}
+                        className="mt-1"
+                      />
+                    )}
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {device.is_online ? (
@@ -286,7 +286,7 @@ export default function Dashboard() {
             
             {devices.map((device, index) => {
               if (!device.latestLocation) return null
-              const color = deviceColors[index % deviceColors.length]
+              const color = getAvatarColor(index)
               
               return (
                 <Marker
@@ -295,8 +295,13 @@ export default function Dashboard() {
                   icon={createMarkerIcon(color, device.is_online)}
                 >
                   <Popup>
-                    <div className="p-2">
+                    <div className="p-2 min-w-[180px]">
                       <h3 className="font-bold text-gray-900">{device.device_name}</h3>
+                      <LocationAddress 
+                        latitude={device.latestLocation.latitude}
+                        longitude={device.latestLocation.longitude}
+                        className="my-1"
+                      />
                       <p className="text-sm text-gray-600">
                         Last update:{' '}
                         {formatDistanceToNow(new Date(device.latestLocation.created_at), {

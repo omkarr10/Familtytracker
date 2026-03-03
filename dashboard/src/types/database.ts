@@ -31,6 +31,7 @@ export interface Database {
           last_seen: string | null
           battery_level: number | null
           is_online: boolean
+          avatar_url: string | null
           created_at: string
         }
         Insert: {
@@ -41,6 +42,7 @@ export interface Database {
           last_seen?: string | null
           battery_level?: number | null
           is_online?: boolean
+          avatar_url?: string | null
           created_at?: string
         }
         Update: {
@@ -51,6 +53,7 @@ export interface Database {
           last_seen?: string | null
           battery_level?: number | null
           is_online?: boolean
+          avatar_url?: string | null
           created_at?: string
         }
         Relationships: []

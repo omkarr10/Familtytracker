@@ -12,7 +12,7 @@
     <color name="text_secondary">#6B7280</color>
     <color name="warning">#F59E0B</color>
     <color name="white">#FFFFFF</color>
-    <string name="app_name">Family Tracker</string>
+    <string name="app_name">TrackIt</string>
     <style name="Theme.FamilyTracker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>

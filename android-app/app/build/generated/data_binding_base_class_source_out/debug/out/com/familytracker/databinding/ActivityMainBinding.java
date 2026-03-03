@@ -23,6 +23,9 @@ public final class ActivityMainBinding implements ViewBinding {
   private final ScrollView rootView;
 
   @NonNull
+  public final MaterialButton btnSetupEmergencyContacts;
+
+  @NonNull
   public final MaterialButton btnSos;
 
   @NonNull
@@ -38,18 +41,24 @@ public final class ActivityMainBinding implements ViewBinding {
   public final TextInputLayout tilDeviceId;
 
   @NonNull
+  public final TextView tvEmergencyContactsStatus;
+
+  @NonNull
   public final TextView tvStatus;
 
-  private ActivityMainBinding(@NonNull ScrollView rootView, @NonNull MaterialButton btnSos,
+  private ActivityMainBinding(@NonNull ScrollView rootView,
+      @NonNull MaterialButton btnSetupEmergencyContacts, @NonNull MaterialButton btnSos,
       @NonNull MaterialButton btnStartTracking, @NonNull MaterialButton btnStopTracking,
       @NonNull TextInputEditText etDeviceId, @NonNull TextInputLayout tilDeviceId,
-      @NonNull TextView tvStatus) {
+      @NonNull TextView tvEmergencyContactsStatus, @NonNull TextView tvStatus) {
     this.rootView = rootView;
+    this.btnSetupEmergencyContacts = btnSetupEmergencyContacts;
     this.btnSos = btnSos;
     this.btnStartTracking = btnStartTracking;
     this.btnStopTracking = btnStopTracking;
     this.etDeviceId = etDeviceId;
     this.tilDeviceId = tilDeviceId;
+    this.tvEmergencyContactsStatus = tvEmergencyContactsStatus;
     this.tvStatus = tvStatus;
   }
 
@@ -80,6 +89,12 @@ public final class ActivityMainBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.btnSetupEmergencyContacts;
+      MaterialButton btnSetupEmergencyContacts = ViewBindings.findChildViewById(rootView, id);
+      if (btnSetupEmergencyContacts == null) {
+        break missingId;
+      }
+
       id = R.id.btnSos;
       MaterialButton btnSos = ViewBindings.findChildViewById(rootView, id);
       if (btnSos == null) {
@@ -110,14 +125,21 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.tvEmergencyContactsStatus;
+      TextView tvEmergencyContactsStatus = ViewBindings.findChildViewById(rootView, id);
+      if (tvEmergencyContactsStatus == null) {
+        break missingId;
+      }
+
       id = R.id.tvStatus;
       TextView tvStatus = ViewBindings.findChildViewById(rootView, id);
       if (tvStatus == null) {
         break missingId;
       }
 
-      return new ActivityMainBinding((ScrollView) rootView, btnSos, btnStartTracking,
-          btnStopTracking, etDeviceId, tilDeviceId, tvStatus);
+      return new ActivityMainBinding((ScrollView) rootView, btnSetupEmergencyContacts, btnSos,
+          btnStartTracking, btnStopTracking, etDeviceId, tilDeviceId, tvEmergencyContactsStatus,
+          tvStatus);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

@@ -1,4 +1,4 @@
-# Family Tracker ProGuard Rules
+# TrackIt ProGuard Rules
 
 # Supabase
 -keep class io.github.jan.supabase.** { *; }

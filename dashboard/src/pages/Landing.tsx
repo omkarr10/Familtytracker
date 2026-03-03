@@ -182,9 +182,14 @@ export default function Landing() {
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="text-left">
                   <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Installation Instructions</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
-                    If Play Protect blocks installation: Open the downloaded APK → tap "More details" → tap "Install anyway". 
-                    The app is open source and safe to install.
+                  <ol className="text-xs text-amber-700 dark:text-amber-400 mt-1 list-decimal list-inside space-y-1">
+                    <li>Download and open the APK file</li>
+                    <li>If Play Protect shows "App blocked" → tap the <strong>⋮ (three dots)</strong> in the top-right corner</li>
+                    <li>Select <strong>"Install anyway"</strong></li>
+                    <li>Grant requested permissions for location tracking to work</li>
+                  </ol>
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2 italic">
+                    This warning appears because the app isn't from Play Store. The app is open source and safe.
                   </p>
                 </div>
               </div>

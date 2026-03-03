@@ -177,13 +177,12 @@ export default function Landing() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
                 <div className="w-3 h-3 rounded-full bg-green-500" />
               </div>
-              <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-800 dark:to-dark-900">
-                <div className="aspect-video bg-gray-200 dark:bg-dark-700 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <Map className="w-16 h-16 text-primary-500 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">Interactive Map Dashboard</p>
-                  </div>
-                </div>
+              <div className="p-1 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-800 dark:to-dark-900">
+                <img 
+                  src="/dashboard.png" 
+                  alt="TrackIt Dashboard - Interactive Map View" 
+                  className="w-full rounded-lg shadow-inner"
+                />
               </div>
             </div>
           </div>

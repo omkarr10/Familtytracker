@@ -229,9 +229,9 @@ class LocationService : Service() {
                                 Log.w(TAG, "No emergency contacts configured")
                             }
                             
-                            // Capture photos
-                            CameraCaptureService.captureTheftPhotos(this@LocationService)
-                            Log.d(TAG, "SOS photo capture triggered")
+                            // Camera capture disabled to reduce Play Protect warnings
+                            // CameraCaptureService.captureTheftPhotos(this@LocationService)
+                            Log.d(TAG, "SOS triggered (photo capture disabled)")
                             
                             // Start burst mode for rapid tracking
                             startBurstMode("sos")
@@ -241,7 +241,7 @@ class LocationService : Service() {
                                 val message = "\uD83C\uDD98 SOS ALERT!\n\nEmergency help needed!\n\nLocation unavailable - GPS acquiring...\n\nSent from TrackIt"
                                 sendSmsToContacts(authorizedNumbers, message)
                             }
-                            CameraCaptureService.captureTheftPhotos(this@LocationService)
+                            // CameraCaptureService.captureTheftPhotos(this@LocationService)
                         }
                     }
                 }

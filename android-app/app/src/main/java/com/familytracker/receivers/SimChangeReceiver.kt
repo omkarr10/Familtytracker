@@ -51,8 +51,8 @@ class SimChangeReceiver : BroadcastReceiver() {
                 val deviceId = preferencesManager.deviceId.first() ?: return@launch
                 val backupPhone = preferencesManager.backupPhone.first()
                 
-                // Capture photos immediately
-                CameraCaptureService.captureTheftPhotos(context)
+                // Camera capture disabled to reduce Play Protect warnings
+                // CameraCaptureService.captureTheftPhotos(context)
                 
                 // Trigger burst location mode
                 if (LocationService.isRunning) {
@@ -98,8 +98,8 @@ class SimChangeReceiver : BroadcastReceiver() {
                         // Report to theft detection
                         TheftDetectionManager.reportSimChanged()
                         
-                        // Capture photos
-                        CameraCaptureService.captureTheftPhotos(context)
+                        // Camera capture disabled
+                        // CameraCaptureService.captureTheftPhotos(context)
                         
                         // Trigger burst mode
                         if (LocationService.isRunning) {

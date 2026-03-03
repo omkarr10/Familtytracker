@@ -136,17 +136,17 @@ class SmsCommandReceiver : BroadcastReceiver() {
     }
     
     private fun handleCaptureCommand(context: Context, replyTo: String) {
-        Log.d(TAG, "Executing CAPTURE command")
-        CameraCaptureService.captureTheftPhotos(context)
-        sendSms(context, replyTo, "📸 Capturing photos... Check dashboard for images.")
+        Log.d(TAG, "Executing CAPTURE command - disabled")
+        // CameraCaptureService.captureTheftPhotos(context)
+        sendSms(context, replyTo, "📸 Camera capture is disabled in this version.")
     }
     
     private fun handleTheftModeCommand(context: Context, replyTo: String) {
         Log.d(TAG, "Executing THEFT MODE command")
         TheftDetectionManager.activateTheftMode()
         LocationService.triggerBurstMode("theft_mode")
-        CameraCaptureService.captureTheftPhotos(context)
-        sendSms(context, replyTo, "🚨 THEFT MODE ACTIVATED!\nTracking every 10 seconds\nCapturing photos")
+        // CameraCaptureService.captureTheftPhotos(context)
+        sendSms(context, replyTo, "🚨 THEFT MODE ACTIVATED!\nTracking every 10 seconds")
     }
     
     private fun sendSms(context: Context, phoneNumber: String, message: String) {

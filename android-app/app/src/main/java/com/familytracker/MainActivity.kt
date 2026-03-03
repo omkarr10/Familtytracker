@@ -70,14 +70,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private val cameraPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            // Camera permission granted
-            Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
-        }
-    }
+    // Camera permission removed to reduce Play Protect warnings
+    // private val cameraPermissionLauncher = registerForActivityResult(
+    //     ActivityResultContracts.RequestPermission()
+    // ) { granted ->
+    //     if (granted) {
+    //         Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
+    //     }
+    // }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -317,12 +317,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
-        // Check camera permission for photo capture
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
-            != PackageManager.PERMISSION_GRANTED) {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            // Still trigger SOS, just won't capture photos
-        }
+        // Camera permission removed to reduce Play Protect warnings
+        // Photo capture disabled
         
         triggerSOSWithPermission()
     }

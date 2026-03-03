@@ -56,7 +56,7 @@ export default function Login() {
         Back to home
       </Link>
       
-      {/* Background decoration */}}
+      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-white/5 to-transparent rounded-full" />
         <div className="absolute -bottom-1/4 -left-1/4 w-1/2 h-1/2 bg-gradient-to-tr from-primary-500/20 to-transparent rounded-full blur-3xl" />

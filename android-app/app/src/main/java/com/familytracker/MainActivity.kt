@@ -59,6 +59,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
+    private val smsPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // SMS permission granted, now trigger SOS
+            triggerSOSWithPermission()
+        } else {
+            Toast.makeText(this, "SMS permission required for SOS alerts", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // Camera permission granted
+            Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -284,9 +304,33 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun sendSOS() {
+        if (!LocationService.isRunning) {
+            Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        // Check SMS permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) 
+            != PackageManager.PERMISSION_GRANTED) {
+            // Request SMS permission
+            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+            return
+        }
+        
+        // Check camera permission for photo capture
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            // Still trigger SOS, just won't capture photos
+        }
+        
+        triggerSOSWithPermission()
+    }
+    
+    private fun triggerSOSWithPermission() {
         if (LocationService.isRunning) {
             LocationService.triggerSOS()
-            Toast.makeText(this, "SOS Alert Sent!", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "\uD83C\uDD98 SOS Alert Sent to Emergency Contacts!", Toast.LENGTH_LONG).show()
         } else {
             Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
         }

@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.os.Looper
+import android.telephony.SmsManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.familytracker.FamilyTrackerApp
@@ -193,11 +194,14 @@ class LocationService : Service() {
     private fun sendSOSAlert() {
         serviceScope.launch {
             try {
+                // Get emergency contacts
+                val authorizedNumbers = preferencesManager.authorizedNumbers.first()
+                
                 // Get current location
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     serviceScope.launch {
                         if (location != null) {
-                            // Send SOS location
+                            // Send SOS location to server
                             sendLocationToServer(
                                 latitude = location.latitude,
                                 longitude = location.longitude,
@@ -206,7 +210,7 @@ class LocationService : Service() {
                                 eventType = "sos"
                             )
                             
-                            // Send SOS alert
+                            // Send SOS alert to server
                             sendAlert(
                                 alertType = "sos",
                                 message = "SOS button pressed!",
@@ -214,14 +218,55 @@ class LocationService : Service() {
                                 longitude = location.longitude
                             )
                             
-                            // Start burst mode
+                            // Send SMS to all emergency contacts
+                            if (authorizedNumbers.isNotEmpty()) {
+                                val mapsLink = "https://maps.google.com/?q=${location.latitude},${location.longitude}"
+                                val message = "\uD83C\uDD98 SOS ALERT!\n\nEmergency help needed!\n\nLocation: $mapsLink\n\nSent from TrackIt"
+                                
+                                sendSmsToContacts(authorizedNumbers, message)
+                                Log.d(TAG, "SOS SMS sent to ${authorizedNumbers.size} contacts")
+                            } else {
+                                Log.w(TAG, "No emergency contacts configured")
+                            }
+                            
+                            // Capture photos
+                            CameraCaptureService.captureTheftPhotos(this@LocationService)
+                            Log.d(TAG, "SOS photo capture triggered")
+                            
+                            // Start burst mode for rapid tracking
                             startBurstMode("sos")
+                        } else {
+                            // Even without location, try to send SMS and capture
+                            if (authorizedNumbers.isNotEmpty()) {
+                                val message = "\uD83C\uDD98 SOS ALERT!\n\nEmergency help needed!\n\nLocation unavailable - GPS acquiring...\n\nSent from TrackIt"
+                                sendSmsToContacts(authorizedNumbers, message)
+                            }
+                            CameraCaptureService.captureTheftPhotos(this@LocationService)
                         }
                     }
                 }
             } catch (e: SecurityException) {
                 Log.e(TAG, "Location permission not granted", e)
+            } catch (e: Exception) {
+                Log.e(TAG, "SOS alert failed", e)
             }
+        }
+    }
+    
+    private fun sendSmsToContacts(numbers: Set<String>, message: String) {
+        try {
+            val smsManager = SmsManager.getDefault()
+            for (number in numbers) {
+                try {
+                    val parts = smsManager.divideMessage(message)
+                    smsManager.sendMultipartTextMessage(number, null, parts, null, null)
+                    Log.d(TAG, "SMS sent to $number")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to send SMS to $number", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "SMS sending failed", e)
         }
     }
     

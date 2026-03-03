@@ -80,7 +80,6 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:testOnly="true"
         android:theme="@style/Theme.FamilyTracker" >
         <activity
             android:name="com.familytracker.MainActivity"

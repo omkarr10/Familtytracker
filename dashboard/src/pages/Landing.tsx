@@ -177,19 +177,46 @@ export default function Landing() {
             </div>
             
             {/* Installation Note */}
-            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl max-w-2xl mx-auto">
+            <div className="mt-6 p-5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl max-w-2xl mx-auto">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="text-left">
-                  <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Installation Instructions</p>
-                  <ol className="text-xs text-amber-700 dark:text-amber-400 mt-1 list-decimal list-inside space-y-1">
-                    <li>Download and open the APK file</li>
-                    <li>If Play Protect shows "App blocked" → tap the <strong>⋮ (three dots)</strong> in the top-right corner</li>
-                    <li>Select <strong>"Install anyway"</strong></li>
-                    <li>Grant requested permissions for location tracking to work</li>
-                  </ol>
-                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2 italic">
-                    This warning appears because the app isn't from Play Store. The app is open source and safe.
+                  <p className="text-base text-amber-800 dark:text-amber-300 font-semibold">📱 Installation Guide</p>
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-1 mb-3">
+                    Since this app is not published on Play Store, follow these steps:
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Step 1: Disable Play Protect</p>
+                      <ol className="text-xs text-amber-700 dark:text-amber-400 mt-1 list-decimal list-inside space-y-0.5 ml-2">
+                        <li>Open <strong>Google Play Store</strong> app</li>
+                        <li>Tap your <strong>profile icon</strong> (top right)</li>
+                        <li>Tap <strong>Play Protect</strong></li>
+                        <li>Tap the <strong>⚙️ Settings</strong> gear icon</li>
+                        <li>Turn off <strong>"Scan apps with Play Protect"</strong></li>
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Step 2: Install the App</p>
+                      <ol className="text-xs text-amber-700 dark:text-amber-400 mt-1 list-decimal list-inside space-y-0.5 ml-2">
+                        <li>Download the APK using the button above</li>
+                        <li>Open the downloaded file and tap <strong>Install</strong></li>
+                        <li>Grant all requested permissions</li>
+                      </ol>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">Step 3: Re-enable Play Protect</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 ml-2">
+                        After installation, go back to Play Store → Play Protect → Settings and turn it back on.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-3 italic border-t border-amber-200 dark:border-amber-700 pt-2">
+                    ✅ This app is open source and safe. View the code on GitHub.
                   </p>
                 </div>
               </div>

@@ -23,7 +23,7 @@ class PreferencesManager(private val context: Context) {
     }
     
     val deviceId: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[DEVICE_ID]
+        preferences[DEVICE_ID] ?: "1ce54707-f014-4f54-a57f-51f623f8517c"
     }
     
     val simSerial: Flow<String?> = context.dataStore.data.map { preferences ->

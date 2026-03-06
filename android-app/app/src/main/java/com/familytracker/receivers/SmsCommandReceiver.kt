@@ -1,5 +1,6 @@
 package com.familytracker.receivers
 
+import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -86,6 +87,7 @@ class SmsCommandReceiver : BroadcastReceiver() {
                     command.contains("STOPALARM") -> handleStopAlarmCommand(context, sender)
                     command.contains("CAPTURE") -> handleCaptureCommand(context, sender)
                     command.contains("THEFT") -> handleTheftModeCommand(context, sender)
+                    command.contains("LOCK") -> handleLockCommand(context, sender)
                 }
                 
             } catch (e: Exception) {
@@ -147,6 +149,29 @@ class SmsCommandReceiver : BroadcastReceiver() {
         LocationService.triggerBurstMode("theft_mode")
         CameraCaptureService.captureTheftPhotos(context)
         sendSms(context, replyTo, "🚨 THEFT MODE ACTIVATED!\nTracking every 10 seconds\nCapturing photos")
+    }
+
+    private fun handleLockCommand(context: Context, replyTo: String) {
+        Log.d(TAG, "Executing LOCK command")
+
+        val devicePolicyManager =
+            context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val componentName = android.content.ComponentName(
+            context,
+            com.familytracker.receivers.DeviceAdminReceiver::class.java
+        )
+
+        if (devicePolicyManager.isAdminActive(componentName)) {
+            devicePolicyManager.lockNow()
+            sendSms(context, replyTo, "🔒 Device locked successfully")
+        } else {
+            Log.e(TAG, "Device admin not active, cannot lock from SMS")
+            sendSms(
+                context,
+                replyTo,
+                "Unable to lock device. Please open the app and enable Device Admin (required for remote lock)."
+            )
+        }
     }
     
     private fun sendSms(context: Context, phoneNumber: String, message: String) {

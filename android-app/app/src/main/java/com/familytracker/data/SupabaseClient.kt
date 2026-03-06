@@ -24,6 +24,11 @@ object SupabaseClient {
         ) {
             install(Postgrest)
             install(Realtime)
+            defaultSerializer = io.github.jan.supabase.serializer.KotlinXSerializer(
+                kotlinx.serialization.json.Json {
+                    ignoreUnknownKeys = true
+                }
+            )
         }
     }
     
@@ -114,6 +119,7 @@ object SupabaseClient {
                 }
                 .decodeList<RemoteCommand>()
         } catch (e: Exception) {
+            android.util.Log.e("SupabaseClient", "Failed to get pending commands", e)
             emptyList()
         }
     }
@@ -165,6 +171,7 @@ data class RemoteCommand(
     val device_id: String,
     val command: String,
     val status: String = "pending",
+    val parameters: kotlinx.serialization.json.JsonElement? = null,
     val created_at: String? = null,
     val executed_at: String? = null
 )

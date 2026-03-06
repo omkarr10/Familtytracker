@@ -72,8 +72,13 @@ class CommandListenerService : Service() {
     }
     
     private suspend fun startListeningForCommands() {
-        val deviceId = preferencesManager.deviceId.first() ?: return
+        val deviceId = preferencesManager.deviceId.first()
+        if (deviceId == null) {
+            Log.e(TAG, "Device ID is null, stopping listener")
+            return
+        }
         
+        Log.d(TAG, "Starting command listener for device: $deviceId")
         try {
             // Poll for commands every 30 seconds (realtime requires more setup)
             while (true) {
@@ -90,8 +95,10 @@ class CommandListenerService : Service() {
     }
     
     private suspend fun checkForCommands(deviceId: String) {
+        Log.d(TAG, "Checking for pending commands...")
         try {
             val commands = SupabaseClient.getPendingCommands(deviceId)
+            Log.d(TAG, "Found ${commands.size} pending commands")
             
             for (command in commands) {
                 Log.d(TAG, "Executing command: ${command.command}")

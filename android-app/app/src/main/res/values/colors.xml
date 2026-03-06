@@ -1,15 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#2563EB</color>
-    <color name="primary_dark">#1D4ED8</color>
-    <color name="accent">#3B82F6</color>
-    <color name="ic_launcher_background">#2563EB</color>
+    <!-- Primary Brand Colors -->
+    <color name="primary">#6366F1</color>
+    <color name="primary_dark">#4F46E5</color>
+    <color name="primary_light">#818CF8</color>
+    <color name="primary_container">#E0E7FF</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_primary_container">#3730A3</color>
+    
+    <!-- Secondary Colors -->
+    <color name="secondary">#06B6D4</color>
+    <color name="secondary_dark">#0891B2</color>
+    <color name="secondary_container">#CFFAFE</color>
+    <color name="on_secondary">#FFFFFF</color>
+    
+    <!-- Accent/Tertiary -->
+    <color name="accent">#8B5CF6</color>
+    <color name="accent_light">#A78BFA</color>
+    
+    <!-- Background & Surface -->
+    <color name="background">#F8FAFC</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F1F5F9</color>
+    <color name="card_background">#FFFFFF</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_hint">#94A3B8</color>
+    <color name="on_surface">#1E293B</color>
+    
+    <!-- Status Colors -->
+    <color name="success">#10B981</color>
+    <color name="success_light">#D1FAE5</color>
+    <color name="error">#EF4444</color>
+    <color name="error_light">#FEE2E2</color>
+    <color name="warning">#F59E0B</color>
+    <color name="warning_light">#FEF3C7</color>
+    <color name="info">#3B82F6</color>
+    <color name="info_light">#DBEAFE</color>
+    
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#6366F1</color>
+    <color name="gradient_end">#8B5CF6</color>
+    <color name="gradient_emergency_start">#EF4444</color>
+    <color name="gradient_emergency_end">#F97316</color>
+    <color name="gradient_success_start">#10B981</color>
+    <color name="gradient_success_end">#06B6D4</color>
+    
+    <!-- Navigation -->
+    <color name="nav_selected">#6366F1</color>
+    <color name="nav_unselected">#94A3B8</color>
+    <color name="nav_background">#FFFFFF</color>
+    
+    <!-- Misc -->
+    <color name="ic_launcher_background">#6366F1</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="background">#F5F5F5</color>
-    <color name="text_primary">#1F2937</color>
-    <color name="text_secondary">#6B7280</color>
-    <color name="success">#22C55E</color>
-    <color name="error">#EF4444</color>
-    <color name="warning">#F59E0B</color>
+    <color name="divider">#E2E8F0</color>
+    <color name="ripple">#1A6366F1</color>
+    <color name="overlay">#80000000</color>
 </resources>

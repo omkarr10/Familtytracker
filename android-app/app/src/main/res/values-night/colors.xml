@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Brand Colors - Dark Mode -->
+    <color name="primary">#818CF8</color>
+    <color name="primary_dark">#6366F1</color>
+    <color name="primary_light">#A5B4FC</color>
+    <color name="primary_container">#312E81</color>
+    <color name="on_primary">#1E1B4B</color>
+    <color name="on_primary_container">#C7D2FE</color>
+    
+    <!-- Secondary Colors -->
+    <color name="secondary">#22D3EE</color>
+    <color name="secondary_dark">#06B6D4</color>
+    <color name="secondary_container">#164E63</color>
+    <color name="on_secondary">#083344</color>
+    
+    <!-- Accent/Tertiary -->
+    <color name="accent">#A78BFA</color>
+    <color name="accent_light">#C4B5FD</color>
+    
+    <!-- Background & Surface - Dark -->
+    <color name="background">#0F172A</color>
+    <color name="surface">#1E293B</color>
+    <color name="surface_variant">#334155</color>
+    <color name="card_background">#1E293B</color>
+    
+    <!-- Text Colors - Dark -->
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="text_hint">#64748B</color>
+    <color name="on_surface">#E2E8F0</color>
+    
+    <!-- Status Colors - Dark -->
+    <color name="success">#34D399</color>
+    <color name="success_light">#065F46</color>
+    <color name="error">#F87171</color>
+    <color name="error_light">#7F1D1D</color>
+    <color name="warning">#FBBF24</color>
+    <color name="warning_light">#78350F</color>
+    <color name="info">#60A5FA</color>
+    <color name="info_light">#1E40AF</color>
+    
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#818CF8</color>
+    <color name="gradient_end">#A78BFA</color>
+    <color name="gradient_emergency_start">#F87171</color>
+    <color name="gradient_emergency_end">#FB923C</color>
+    <color name="gradient_success_start">#34D399</color>
+    <color name="gradient_success_end">#22D3EE</color>
+    
+    <!-- Navigation - Dark -->
+    <color name="nav_selected">#818CF8</color>
+    <color name="nav_unselected">#64748B</color>
+    <color name="nav_background">#1E293B</color>
+    
+    <!-- Misc -->
+    <color name="ic_launcher_background">#6366F1</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="divider">#334155</color>
+    <color name="ripple">#33818CF8</color>
+    <color name="overlay">#CC000000</color>
+</resources>

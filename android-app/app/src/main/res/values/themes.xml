@@ -1,10 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.FamilyTracker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- Base Theme - Light -->
+    <style name="Theme.FamilyTracker" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+        
+        <!-- Secondary -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        
+        <!-- Tertiary/Accent -->
+        <item name="colorTertiary">@color/accent</item>
         <item name="colorAccent">@color/accent</item>
-        <item name="android:windowBackground">@color/background</item>
-        <item name="android:statusBarColor">@color/primary</item>
+        
+        <!-- Background & Surface -->
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        
+        <!-- Navigation Bar -->
+        <item name="android:navigationBarColor">@color/nav_background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Error -->
+        <item name="colorError">@color/error</item>
+        
+        <!-- Ripple -->
+        <item name="android:colorControlHighlight">@color/ripple</item>
+    </style>
+    
+    <!-- Splash Screen Theme -->
+    <style name="Theme.FamilyTracker.Splash" parent="Theme.FamilyTracker">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+    
+    <!-- Card Style -->
+    <style name="Widget.FamilyTracker.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="cardBackgroundColor">@color/card_background</item>
+    </style>
+    
+    <!-- Primary Button -->
+    <style name="Widget.FamilyTracker.Button.Primary" parent="Widget.Material3.Button">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="backgroundTint">@color/primary</item>
+    </style>
+    
+    <!-- Outlined Button -->
+    <style name="Widget.FamilyTracker.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="strokeColor">@color/primary</item>
+        <item name="android:textColor">@color/primary</item>
+    </style>
+    
+    <!-- Text Button -->
+    <style name="Widget.FamilyTracker.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textColor">@color/primary</item>
+    </style>
+    
+    <!-- Bottom Navigation -->
+    <style name="Widget.FamilyTracker.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@color/nav_background</item>
+        <item name="itemIconTint">@color/bottom_nav_color</item>
+        <item name="itemTextColor">@color/bottom_nav_color</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.FamilyTracker.BottomNavigation.ActiveIndicator</item>
+    </style>
+    
+    <style name="Widget.FamilyTracker.BottomNavigation.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/primary_container</item>
+    </style>
+    
+    <!-- Text Input -->
+    <style name="Widget.FamilyTracker.TextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxStrokeColor">@color/text_input_stroke</item>
+        <item name="hintTextColor">@color/text_secondary</item>
     </style>
 </resources>

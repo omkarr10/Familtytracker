@@ -46,6 +46,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     
+    <!-- Sensors for Shake Detection -->
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
+    
     <!-- Anti-Theft: Device Admin for Lock/Wipe -->
     <uses-permission android:name="android.permission.BIND_DEVICE_ADMIN" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
@@ -129,6 +132,20 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="shortService" />
+
+        <!-- Shake-to-SOS Service -->
+        <service
+            android:name=".services.ShakeDetectorService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
+
+        <!-- Speed Alert Service -->
+        <service
+            android:name=".services.SpeedAlertService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <!-- Anti-Theft: Accessibility Service for blocking notification bar -->
         <service

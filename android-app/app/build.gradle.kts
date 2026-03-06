@@ -70,6 +70,11 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-service:2.7.0")
+    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
+    
+    // Navigation
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
     
     // Supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:2.0.4"))

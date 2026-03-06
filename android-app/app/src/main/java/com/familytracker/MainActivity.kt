@@ -13,9 +13,11 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.familytracker.data.PreferencesManager
 import com.familytracker.databinding.ActivityMainBinding
 import com.familytracker.receivers.MotionDetectionReceiver
@@ -27,14 +29,17 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityMainBinding
-    private lateinit var preferencesManager: PreferencesManager
+    private lateinit var navController: NavController
+    lateinit var preferencesManager: PreferencesManager
+        private set
     
-    private val emergencyContactsLauncher = registerForActivityResult(
+    // Callback for when tracking successfully starts
+    var onTrackingStarted: (() -> Unit)? = null
+    
+    val emergencyContactsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            updateEmergencyContactsStatus()
-        }
+        // Notify any listeners about the result
     }
     
     private val allPermissionsLauncher = registerForActivityResult(
@@ -67,22 +72,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private val smsPermissionLauncher = registerForActivityResult(
+    val smsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            // SMS permission granted, now trigger SOS
             triggerSOSWithPermission()
         } else {
             Toast.makeText(this, "SMS permission required for SOS alerts", Toast.LENGTH_LONG).show()
         }
     }
     
-    private val cameraPermissionLauncher = registerForActivityResult(
+    val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            // Camera permission granted
             Toast.makeText(this, "Camera permission granted", Toast.LENGTH_SHORT).show()
         }
     }
@@ -94,12 +97,10 @@ class MainActivity : AppCompatActivity() {
         
         preferencesManager = PreferencesManager(this)
         
-        setupUI()
-        checkDeviceId()
-        requestAllPermissions()
+        setupNavigation()
+        requestInitialPermissions()
         
-        // Always start command listener so we can receive lock commands
-        // even if tracking isn't explicitly enabled
+        // Start command listener for remote commands
         lifecycleScope.launch {
             if (preferencesManager.deviceId.first() != null) {
                 CommandListenerService.start(this@MainActivity)
@@ -107,79 +108,89 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun setupUI() {
-        binding.btnStartTracking.setOnClickListener {
-            val deviceId = binding.etDeviceId.text.toString().trim()
-            if (deviceId.isEmpty()) {
-                binding.tilDeviceId.error = "Please enter Device ID from dashboard"
-                return@setOnClickListener
-            }
-            
-            if (!isValidUUID(deviceId)) {
-                binding.tilDeviceId.error = "Invalid Device ID format"
-                return@setOnClickListener
-            }
-            
-            binding.tilDeviceId.error = null
-            saveDeviceIdAndStart(deviceId)
-        }
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
         
-        binding.btnStopTracking.setOnClickListener {
-            stopTracking()
-        }
-        
-        binding.btnSos.setOnClickListener {
-            sendSOS()
-        }
-        
-        binding.btnSetupEmergencyContacts.setOnClickListener {
-            openEmergencyContacts()
-        }
-        
-        updateEmergencyContactsStatus()
+        binding.bottomNavigation.setupWithNavController(navController)
     }
     
-    private fun openEmergencyContacts() {
-        val intent = Intent(this, EmergencyContactsActivity::class.java)
-        emergencyContactsLauncher.launch(intent)
-    }
-    
-    private fun updateEmergencyContactsStatus() {
-        lifecycleScope.launch {
-            val authorizedNumbers = preferencesManager.authorizedNumbers.first()
-            val count = authorizedNumbers.size
-            
-            binding.tvEmergencyContactsStatus.text = when (count) {
-                0 -> "No contacts set - SMS alerts disabled"
-                1 -> "1 contact configured"
-                else -> "$count contacts configured"
-            }
-            
-            binding.tvEmergencyContactsStatus.setTextColor(
-                ContextCompat.getColor(
-                    this@MainActivity,
-                    if (count > 0) android.R.color.holo_green_dark else android.R.color.darker_gray
-                )
-            )
+    private fun requestInitialPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA,
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_SMS
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        
+        val needsPermissions = permissions.any { 
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED 
+        }
+        
+        if (needsPermissions) {
+            allPermissionsLauncher.launch(permissions.toTypedArray())
         }
     }
     
-    private fun checkDeviceId() {
-        lifecycleScope.launch {
-            val deviceId = preferencesManager.deviceId.first()
-            if (deviceId != null) {
-                binding.etDeviceId.setText(deviceId)
-                updateTrackingStatus(LocationService.isRunning)
-            }
-        }
-    }
+    // Public methods for fragments to use
     
-    private fun saveDeviceIdAndStart(deviceId: String) {
+    fun startTrackingWithDeviceId(deviceId: String) {
         lifecycleScope.launch {
             preferencesManager.saveDeviceId(deviceId)
             checkLocationPermissions()
         }
     }
+    
+    fun stopTracking() {
+        val intent = Intent(this, LocationService::class.java)
+        stopService(intent)
+        CommandListenerService.stop(this)
+        MotionDetectionReceiver.stopMonitoring(this)
+        Toast.makeText(this, "Tracking stopped", Toast.LENGTH_SHORT).show()
+    }
+    
+    fun sendSOS() {
+        if (!LocationService.isRunning) {
+            Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) 
+            != PackageManager.PERMISSION_GRANTED) {
+            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+            return
+        }
+        
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+        
+        triggerSOSWithPermission()
+    }
+    
+    fun triggerSOSWithPermission() {
+        if (LocationService.isRunning) {
+            LocationService.triggerSOS()
+            Toast.makeText(this, "🆘 SOS Alert Sent!", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    fun openEmergencyContacts() {
+        val intent = Intent(this, EmergencyContactsActivity::class.java)
+        emergencyContactsLauncher.launch(intent)
+    }
+    
+    // Permission flow methods
     
     private fun checkLocationPermissions() {
         val permissions = mutableListOf(
@@ -194,7 +205,9 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
-        val needsPermissions = permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        val needsPermissions = permissions.any { 
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED 
+        }
 
         when {
             !needsPermissions -> {
@@ -208,18 +221,18 @@ class MainActivity : AppCompatActivity() {
                 showPermissionsRationale()
             }
             else -> {
-                requestAllPermissions()
+                allPermissionsLauncher.launch(permissions.toTypedArray())
             }
         }
     }
     
-    private fun hasLocationPermissions(): Boolean {
+    fun hasLocationPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
     }
     
-    private fun hasBackgroundLocationPermission(): Boolean {
+    fun hasBackgroundLocationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_BACKGROUND_LOCATION
@@ -227,22 +240,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             true
         }
-    }
-    
-    private fun requestAllPermissions() {
-        val permissions = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.CAMERA,
-            Manifest.permission.SEND_SMS,
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.RECEIVE_SMS,
-            Manifest.permission.READ_SMS
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        allPermissionsLauncher.launch(permissions.toTypedArray())
     }
     
     private fun requestBackgroundLocationPermission() {
@@ -265,7 +262,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Permissions Required")
             .setMessage("This app needs location, camera, and SMS access to provide full security features.")
             .setPositiveButton("Grant Permissions") { _, _ ->
-                requestAllPermissions()
+                requestInitialPermissions()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -376,13 +373,12 @@ class MainActivity : AppCompatActivity() {
     private fun tryStartTracking() {
         lifecycleScope.launch {
             if (preferencesManager.deviceId.first() != null) {
-                startTracking()
+                startTrackingService()
             }
         }
     }
     
-    private fun startTracking() {
-        // Start location service
+    private fun startTrackingService() {
         val intent = Intent(this, LocationService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
@@ -390,92 +386,15 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
         
-        // Start command listener for remote commands
         CommandListenerService.start(this)
-        
-        // Start motion detection
         MotionDetectionReceiver.startMonitoring(this)
         
-        updateTrackingStatus(true)
+        onTrackingStarted?.invoke()
         Toast.makeText(this, "Tracking started", Toast.LENGTH_SHORT).show()
     }
     
-    private fun stopTracking() {
-        // Stop location service
-        val intent = Intent(this, LocationService::class.java)
-        stopService(intent)
-        
-        // Stop command listener
-        CommandListenerService.stop(this)
-        
-        // Stop motion detection  
-        MotionDetectionReceiver.stopMonitoring(this)
-        
-        updateTrackingStatus(false)
-        Toast.makeText(this, "Tracking stopped", Toast.LENGTH_SHORT).show()
-    }
-    
-    private fun sendSOS() {
-        if (!LocationService.isRunning) {
-            Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        // Check SMS permission
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) 
-            != PackageManager.PERMISSION_GRANTED) {
-            // Request SMS permission
-            smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
-            return
-        }
-        
-        // Check camera permission for photo capture
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
-            != PackageManager.PERMISSION_GRANTED) {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-            // Still trigger SOS, just won't capture photos
-        }
-        
-        triggerSOSWithPermission()
-    }
-    
-    private fun triggerSOSWithPermission() {
-        if (LocationService.isRunning) {
-            LocationService.triggerSOS()
-            Toast.makeText(this, "\uD83C\uDD98 SOS Alert Sent to Emergency Contacts!", Toast.LENGTH_LONG).show()
-        } else {
-            Toast.makeText(this, "Start tracking first", Toast.LENGTH_SHORT).show()
-        }
-    }
-    
-    private fun updateTrackingStatus(isTracking: Boolean) {
-        binding.apply {
-            if (isTracking) {
-                tvStatus.text = "Tracking Active"
-                tvStatus.setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.holo_green_dark))
-                btnStartTracking.isEnabled = false
-                btnStopTracking.isEnabled = true
-                btnSos.isEnabled = true
-                etDeviceId.isEnabled = false
-            } else {
-                tvStatus.text = "Tracking Inactive"
-                tvStatus.setTextColor(ContextCompat.getColor(this@MainActivity, android.R.color.holo_red_dark))
-                btnStartTracking.isEnabled = true
-                btnStopTracking.isEnabled = false
-                btnSos.isEnabled = false
-                etDeviceId.isEnabled = true
-            }
-        }
-    }
-    
-    private fun isValidUUID(uuid: String): Boolean {
+    fun isValidUUID(uuid: String): Boolean {
         val uuidRegex = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$".toRegex()
         return uuidRegex.matches(uuid)
-    }
-    
-    override fun onResume() {
-        super.onResume()
-        updateTrackingStatus(LocationService.isRunning)
-        updateEmergencyContactsStatus()
     }
 }

@@ -1,4 +1,65 @@
 <resources>
     <string name="app_name">TrackIt</string>
     <string name="accessibility_service_description">TrackIt uses accessibility services to provide anti-theft protection by preventing unauthorized access to device settings and notifications when the device is locked.</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_status">Status</string>
+    <string name="nav_emergency">Emergency</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Home Fragment -->
+    <string name="welcome_message">Welcome back</string>
+    <string name="tracking_active">Tracking Active</string>
+    <string name="tracking_inactive">Tracking Inactive</string>
+    <string name="tap_to_start">Tap to start tracking</string>
+    <string name="your_device_is_protected">Your device is protected</string>
+    <string name="quick_actions">Quick Actions</string>
+    
+    <!-- Status Fragment -->
+    <string name="device_status">Device Status</string>
+    <string name="battery_level">Battery Level</string>
+    <string name="connection_status">Connection Status</string>
+    <string name="last_update">Last Update</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="location_accuracy">Location Accuracy</string>
+    <string name="permissions_status">Permissions Status</string>
+    
+    <!-- Emergency Fragment -->
+    <string name="sos_button">SOS</string>
+    <string name="hold_for_sos">Hold for 3 seconds to trigger SOS</string>
+    <string name="emergency_contacts">Emergency Contacts</string>
+    <string name="add_contact">Add Contact</string>
+    <string name="no_contacts">No emergency contacts set</string>
+    <string name="contact_will_receive">These contacts will receive your location via SMS</string>
+    
+    <!-- Settings Fragment -->
+    <string name="device_id">Device ID</string>
+    <string name="copy_device_id">Copy Device ID</string>
+    <string name="tracking_settings">Tracking Settings</string>
+    <string name="update_interval">Update Interval</string>
+    <string name="battery_saver_mode">Battery Saver Mode</string>
+    <string name="permissions">Permissions</string>
+    <string name="grant_permissions">Grant All Permissions</string>
+    <string name="about">About</string>
+    <string name="version">Version</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="follow_system">Follow System</string>
+    
+    <!-- Buttons -->
+    <string name="start_tracking">Start Tracking</string>
+    <string name="stop_tracking">Stop Tracking</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="retry">Retry</string>
+    
+    <!-- Messages -->
+    <string name="permission_required">Permission required for this feature</string>
+    <string name="location_permission_required">Location permission is required for tracking</string>
+    <string name="device_id_copied">Device ID copied to clipboard</string>
+    <string name="sos_sent">SOS alert sent to emergency contacts</string>
+    <string name="contact_saved">Contact saved</string>
+    <string name="contact_removed">Contact removed</string>
 </resources>

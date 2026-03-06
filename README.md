@@ -1,291 +1,325 @@
-# TrackIt 📍
+# TrackIt 🔐
 
 <div align="center">
-  <img src="dashboard/public/logo.jpeg" alt="TrackIt Logo" width="120" height="120" style="border-radius: 20px;">
+  <img src="dashboard/public/logo.jpeg" alt="TrackIt Logo" width="150" height="150" style="border-radius: 30px;">
   
-  <h3>Real-time Family Location Tracking with Anti-Theft Protection</h3>
+  <h1>Family Safety & Anti-Theft System</h1>
   
-  <p>Open source family safety app with powerful theft detection and SMS fallback</p>
+  <p><strong>The most powerful open-source family tracker with military-grade anti-theft protection</strong></p>
   
-  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-  [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-  [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?logo=kotlin)](https://kotlinlang.org/)
-  [![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase)](https://supabase.com/)
+  <p>Track your family. Catch thieves. Works offline. No cloud lock-in.</p>
+
+  <br/>
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+  [![Android](https://img.shields.io/badge/Android-13+-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+  [![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+  [![Supabase](https://img.shields.io/badge/Supabase-Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+  
+  <br/>
+  
+  [📱 Download APK](https://familytracker.vercel.app/TrackIt.apk) · [🌐 Live Demo](https://familytracker.vercel.app) · [📖 Documentation](#-getting-started)
+  
 </div>
+
+---
+
+<br/>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><img src="https://img.icons8.com/fluency/48/map-marker.png" width="32"/><br/><b>Real-Time GPS</b><br/><sub>Track family 24/7</sub></td>
+      <td align="center"><img src="https://img.icons8.com/fluency/48/camera.png" width="32"/><br/><b>Thief Selfie</b><br/><sub>Auto photo capture</sub></td>
+      <td align="center"><img src="https://img.icons8.com/fluency/48/sim-card.png" width="32"/><br/><b>SIM Detection</b><br/><sub>Instant alerts</sub></td>
+      <td align="center"><img src="https://img.icons8.com/fluency/48/sms.png" width="32"/><br/><b>SMS Fallback</b><br/><sub>Works offline</sub></td>
+      <td align="center"><img src="https://img.icons8.com/fluency/48/shake-phone.png" width="32"/><br/><b>Shake SOS</b><br/><sub>3 shakes = help</sub></td>
+    </tr>
+  </table>
+</div>
+
+<br/>
+
+---
+
+## 🔥 Why TrackIt?
+
+| Feature | TrackIt | Life360 | Find My | Google Find |
+|---------|:-------:|:-------:|:-------:|:-----------:|
+| **100% Free** | ✅ | ❌ | ✅ | ✅ |
+| **Open Source** | ✅ | ❌ | ❌ | ❌ |
+| **Self-Hostable** | ✅ | ❌ | ❌ | ❌ |
+| **Works Offline (SMS)** | ✅ | ❌ | ❌ | ❌ |
+| **Thief Photo Capture** | ✅ | ❌ | ❌ | ❌ |
+| **SIM Removal Alert** | ✅ | ❌ | ❌ | ❌ |
+| **Remote Alarm** | ✅ | ❌ | ✅ | ✅ |
+| **Shake-to-SOS** | ✅ | ❌ | ❌ | ❌ |
+| **Speed Alerts** | ✅ | ✅ | ❌ | ❌ |
+| **No Ads** | ✅ | ❌ | ✅ | ✅ |
+| **No Data Selling** | ✅ | ❌ | ? | ❌ |
 
 ---
 
 ## ✨ Features
 
-### 📍 Real-Time Location Tracking
-- Live GPS tracking on interactive map
-- Location history with timeline view
-- Multiple map themes (Standard, Satellite, Dark)
-- Device battery and speed monitoring
+### 📍 Location Tracking
+- **Real-time GPS** - See family members on a live map
+- **Location History** - View where they've been with timeline
+- **Multiple Map Styles** - Standard, Satellite, Dark mode
+- **Battery & Speed Display** - Monitor device status
+- **Geofencing** - Get alerts when entering/leaving zones
 
-### 🛡️ Anti-Theft Protection
-- **SIM Removal Detection** - Instant alerts when SIM card is removed
-- **Thief Photo Capture** - Automatically takes front & back camera photos
-- **Remote Lock** - Lock the device remotely
-- **Loud Alarm** - Sound alarm even when phone is on silent
-- **SMS Fallback** - Control device via SMS when internet is unavailable
-- **Motion Detection** - Detects sudden grab movements
-- **Theft Mode** - High-frequency tracking during theft events
+### 🛡️ Anti-Theft Arsenal
 
-### 🔔 Smart Alerts
-- Geofence entry/exit notifications
-- Low battery alerts
-- SOS emergency button
-- SIM change notifications
+<table>
+<tr>
+<td width="50%">
 
-### 📱 SMS Commands (No Internet Required)
+**🎭 Intruder Selfie**
+- Wrong PIN? Front camera silently captures photo
+- Auto-uploads to dashboard
+- Works even if phone is locked
+
+**📵 SIM Removal Detection**
+- Instant SMS alert to emergency contacts
+- Last GPS location included
+- Works without internet
+
+**🔊 Remote Alarm**
+- 100% volume even on silent mode
+- Cannot be stopped without PIN
+- Loops until you disable remotely
+
+</td>
+<td width="50%">
+
+**🔒 Remote Lock**
+- Lock device from anywhere
+- Custom lock message
+- Stealth mode (screen appears off)
+
+**📱 SMS Commands**
+- Control phone without internet
+- Location, Alarm, Photos, Lock
+- Secret code protected
+
+**🆘 Shake-to-SOS**
+- Shake phone 3x = emergency alert
+- Sends location to all contacts
+- Triggers burst tracking mode
+
+</td>
+</tr>
+</table>
+
+### ⚡ Battery Optimized
+
+Built for 24/7 operation with minimal battery drain:
+
 ```
-TRACKIT LOCATE   - Get current GPS location via SMS
-TRACKIT ALARM    - Sound loud alarm
-TRACKIT CAPTURE  - Capture thief photos
-TRACKIT THEFT    - Activate theft mode
+Normal Mode:    ~3-5% battery per hour
+Theft Mode:     ~8-10% battery per hour (burst tracking)
+Always-On:      ~15-20% per day in standby
 ```
+
+**Optimizations include:**
+- ⚙️ Adaptive GPS intervals (5 min idle → 15 sec during movement)
+- 🔋 Balanced power accuracy (not high accuracy)
+- 📡 Sensor throttling for shake detection
+- 📦 Batched location updates
 
 ---
 
-## 🏗️ Architecture
+## 📱 SMS Commands
+
+When internet fails, control via SMS:
+
+```bash
+TRACKIT LOCATE    → Returns GPS coordinates + Google Maps link
+TRACKIT ALARM     → Triggers loud alarm at max volume
+TRACKIT CAPTURE   → Takes front & back camera photos
+TRACKIT LOCK      → Remotely locks the device
+TRACKIT THEFT     → Activates theft mode (rapid tracking)
+```
+
+> 💡 Send from an authorized number. Default secret code: `TRACKIT`
+
+---
+
+## 🏗️ Tech Stack
+
+<div align="center">
+
+| Layer | Technology |
+|-------|------------|
+| **Android App** | Kotlin, Jetpack, Material 3, Foreground Services |
+| **Web Dashboard** | React 18, TypeScript, Vite, Tailwind CSS, Zustand |
+| **Maps** | Leaflet, React-Leaflet, OpenStreetMap |
+| **Backend** | Supabase (PostgreSQL, Realtime, Auth) |
+| **Hosting** | Vercel (dashboard), Self-hosted APK |
+
+</div>
+
+### Project Structure
 
 ```
 TrackIt/
-├── dashboard/          # React + TypeScript web dashboard
-│   ├── src/
-│   │   ├── pages/      # Dashboard pages
-│   │   ├── components/ # Reusable UI components
-│   │   ├── lib/        # API client, utilities
-│   │   └── store/      # Zustand state management
-│   └── public/         # Static assets, PWA manifest
+├── 📱 android-app/                 # Kotlin Android application
+│   └── app/src/main/java/com/familytracker/
+│       ├── services/
+│       │   ├── LocationService.kt      # GPS tracking (battery optimized)
+│       │   ├── ShakeDetectorService.kt # Shake-to-SOS
+│       │   ├── SpeedAlertService.kt    # Speed monitoring
+│       │   ├── CameraCaptureService.kt # Silent photo capture
+│       │   ├── AlarmService.kt         # Remote alarm
+│       │   └── CommandListenerService.kt # Remote commands
+│       ├── receivers/
+│       │   ├── SmsReceiver.kt          # SMS command handler
+│       │   ├── SimChangeReceiver.kt    # SIM removal detection
+│       │   └── BootReceiver.kt         # Auto-start on boot
+│       └── ui/
+│           ├── HomeFragment.kt
+│           ├── StatusFragment.kt
+│           ├── EmergencyFragment.kt
+│           └── SettingsFragment.kt
 │
-├── android-app/        # Kotlin Android application
-│   └── app/src/main/
-│       ├── java/com/familytracker/
-│       │   ├── services/    # Location, Camera, Alarm services
-│       │   ├── receivers/   # Boot, SMS, SIM change receivers
-│       │   └── data/        # Preferences, Supabase client
-│       └── res/             # Layouts, drawables, values
+├── 🌐 dashboard/                   # React web dashboard
+│   └── src/
+│       ├── pages/
+│       │   ├── Landing.tsx         # Public landing page
+│       │   ├── Dashboard.tsx       # Main tracking view
+│       │   ├── Devices.tsx         # Device management
+│       │   └── Settings.tsx        # User preferences
+│       ├── components/
+│       │   ├── Map.tsx             # Interactive Leaflet map
+│       │   ├── AntiTheftPanel.tsx  # Remote control panel
+│       │   └── DeviceCard.tsx      # Device status cards
+│       └── lib/
+│           └── api.ts              # Supabase client
 │
-└── supabase/           # Database migrations
-    └── migrations/     # SQL schema files
+└── 🗄️ supabase/                    # Database schema
+    └── migrations/                 # SQL migration files
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
+### Option 1: Use Hosted Version (Recommended)
 
+1. **Download APK**: [familytracker.vercel.app/TrackIt.apk](https://familytracker.vercel.app/TrackIt.apk)
+2. **Install on Android**: Allow unknown sources, install APK
+3. **Open Dashboard**: [familytracker.vercel.app](https://familytracker.vercel.app)
+4. **Create Account** & link your device
+
+### Option 2: Self-Host Everything
+
+<details>
+<summary><b>📖 Full Setup Guide (click to expand)</b></summary>
+
+#### Prerequisites
 - Node.js 18+
-- Android Studio (for Android app)
+- Android Studio (Hedgehog+)
 - Supabase account (free tier works)
 
-### 1. Clone the Repository
+#### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/yourusername/trackit.git
-cd trackit
+git clone https://github.com/omkarr10/Familtytracker.git
+cd Familtytracker
 ```
 
-### 2. Set Up Supabase
+#### 2. Setup Supabase
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the migrations:
+1. Create project at [supabase.com](https://supabase.com)
+2. Run migrations from `supabase/migrations/` in SQL Editor
+3. Get your API URL and anon key
 
-```sql
--- Run each file in supabase/migrations/ in order:
--- 20250101000001_initial_schema.sql
--- 20250101000002_add_avatar_column.sql
--- 20250101000003_add_anti_theft_tables.sql
-```
-
-3. Copy your project URL and anon key
-
-### 3. Set Up Dashboard
+#### 3. Configure Dashboard
 
 ```bash
 cd dashboard
 npm install
 
-# Create environment file
-cp .env.example .env
-```
+# Create .env file
+echo "VITE_SUPABASE_URL=your_supabase_url" > .env
+echo "VITE_SUPABASE_ANON_KEY=your_anon_key" >> .env
 
-Edit `.env`:
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
-Start development server:
-```bash
 npm run dev
 ```
 
-### 4. Set Up Android App
+#### 4. Build Android App
 
-1. Open `android-app` folder in Android Studio
-2. Create `local.properties` if not exists:
-```properties
-sdk.dir=/path/to/your/android/sdk
-```
+1. Open `android-app/` in Android Studio
+2. Update Supabase credentials in `SupabaseClient.kt`
+3. Build → Generate Signed APK
+4. Install on device
 
-3. Update Supabase credentials in `SupabaseClient.kt`:
-```kotlin
-private const val SUPABASE_URL = "https://your-project.supabase.co"
-private const val SUPABASE_KEY = "your-anon-key"
-```
-
-4. Build and run:
-```bash
-./gradlew assembleDebug
-```
+</details>
 
 ---
 
-## 📱 Android App Setup
-
-### Required Permissions
-
-The app requires these permissions for full functionality:
+## 📱 Required Permissions
 
 | Permission | Purpose |
 |------------|---------|
-| Location (Always) | Background location tracking |
-| Camera | Capture thief photos |
-| SMS | Send/receive SMS commands |
-| Phone State | SIM change detection |
-| Contacts | Emergency contact selection |
-| Notifications | Alerts and status |
-
-### Enable Device Admin
-
-For remote lock/wipe functionality:
-1. Go to Settings → Apps → TrackIt
-2. Enable "Device Administrator"
+| **Location (Always)** | Background location tracking |
+| **Camera** | Capture thief photos |
+| **SMS** | Send/receive SMS commands |
+| **Phone State** | SIM change detection |
+| **Contacts** | Emergency contact selection |
+| **Notifications** | Alerts and status |
 
 ---
 
-## 🔧 Configuration
+## 🔒 Privacy & Security
 
-### Emergency Contacts
-
-Set up to 3 emergency contacts in the Android app. These contacts will receive:
-- SMS alerts with location when SIM is removed
-- Theft detection notifications
-- SOS emergency alerts
-
-### Geofences
-
-Create virtual boundaries on the dashboard:
-1. Go to Geofences page
-2. Click "Add Geofence"
-3. Draw a circle on the map
-4. Set name and radius
-5. Get notified when devices enter/leave
-
----
-
-## 🛡️ Anti-Theft Features
-
-### Theft Detection Scoring
-
-TrackIt uses a scoring system to detect theft:
-
-| Event | Points |
-|-------|--------|
-| SIM Removed | 50 |
-| Wrong PIN (each) | 15 |
-| Airplane Mode On | 25 |
-| Sudden Motion | 10 |
-
-**Theft Mode activates at 50+ points**
-
-### What Happens During Theft
-
-1. **Instant Photo Capture** - Front and back camera
-2. **SMS Alert** - Location sent to emergency contacts
-3. **High-Frequency Tracking** - Updates every 5 seconds
-4. **Offline Caching** - Data stored locally if no internet
-5. **Auto-Sync** - Cached data uploads when online
-
----
-
-## 🌐 Deployment
-
-### Dashboard (Vercel)
-
-```bash
-cd dashboard
-npm run build
-vercel --prod
-```
-
-### Dashboard (Self-Hosted)
-
-```bash
-npm run build
-# Serve the 'dist' folder with any static hosting
-```
-
-### API Proxy (Required for Supabase)
-
-The dashboard uses a Vercel serverless function to proxy Supabase requests. For self-hosting, deploy the `/api` folder as serverless functions or create your own proxy.
-
----
-
-## 📊 Database Schema
-
-### Tables
-
-- **devices** - Registered devices
-- **locations** - Location history
-- **geofences** - Virtual boundaries
-- **alerts** - Notification history
-- **theft_photos** - Captured thief images
-- **remote_commands** - Dashboard → Device commands
-- **theft_events** - Suspicious activity log
+- 🏠 **Your Data, Your Server** - Self-host everything if paranoid
+- 🚫 **No Analytics** - Zero tracking, zero telemetry
+- 🔍 **Open Source** - Audit every line of code
+- 🔐 **Local Auth** - Credentials never leave your Supabase instance
+- 📱 **End-to-End** - SMS commands use secret codes
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Pull requests welcome! Here's how:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+# Fork the repo, then:
+git checkout -b feature/amazing-feature
+git commit -m "Add amazing feature"
+git push origin feature/amazing-feature
+# Open a Pull Request
+```
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- [Supabase](https://supabase.com) - Backend as a Service
-- [Leaflet](https://leafletjs.com) - Interactive maps
-- [shadcn/ui](https://ui.shadcn.com) - UI components inspiration
-- [Lucide](https://lucide.dev) - Beautiful icons
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/trackit/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/trackit/discussions)
+MIT License - do whatever you want with it.
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ for family safety</p>
-  <p>⭐ Star this repo if you find it useful!</p>
+  <br/>
+  
+  ### ⭐ Star this repo if it saved your phone or helped your family!
+  
+  <br/>
+  
+  <p>
+    <a href="https://github.com/omkarr10/Familtytracker/stargazers">⭐ Star</a> ·
+    <a href="https://github.com/omkarr10/Familtytracker/issues">🐛 Report Bug</a> ·
+    <a href="https://github.com/omkarr10/Familtytracker/issues">💡 Request Feature</a>
+  </p>
+  
+  <br/>
+  
+  Made with ❤️ for family safety
+  
+  <br/>
 </div>

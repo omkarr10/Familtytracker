@@ -9,12 +9,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
+import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -221,6 +224,8 @@ class DeviceLockActivity : Activity() {
     private var tapCount = 0
     private var lastTapTime = 0L
     private var stealthModeEnabled = false
+    private var statusBarBlocker: View? = null
+    private var windowManager: WindowManager? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -233,11 +238,17 @@ class DeviceLockActivity : Activity() {
         }
         isStealthMode = stealthModeEnabled
         
-        // Make it full screen and show over lock screen
-        setupWindowFlags()
+        // Set basic window flags BEFORE setContentView
+        setupWindowFlagsEarly()
         
         // Create and set the lock screen view (stealth = black screen)
         setContentView(createLockView())
+        
+        // Set system UI flags AFTER setContentView (requires DecorView)
+        setupSystemUI()
+        
+        // Block the status/notification bar with an overlay
+        blockStatusBar()
         
         // Register for unlock broadcasts
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -270,7 +281,68 @@ class DeviceLockActivity : Activity() {
         }
     }
     
-    private fun setupWindowFlags() {
+    private fun blockStatusBar() {
+        try {
+            // Check if we have overlay permission
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+                Log.w(TAG, "No overlay permission - cannot block status bar")
+                return
+            }
+            
+            windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            
+            // Create an invisible view that blocks notification bar pulls
+            statusBarBlocker = View(this).apply {
+                setBackgroundColor(Color.TRANSPARENT)
+                // Consume all touch events on this view
+                setOnTouchListener { _, _ -> true }
+            }
+            
+            // Layout params for status bar blocking overlay
+            val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_SYSTEM_ERROR
+            }
+            
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                resources.getDimensionPixelSize(
+                    resources.getIdentifier("status_bar_height", "dimen", "android")
+                ).coerceAtLeast(100), // At least 100px to cover status bar area
+                layoutType,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT
+            ).apply {
+                gravity = Gravity.TOP or Gravity.START
+                x = 0
+                y = 0
+            }
+            
+            windowManager?.addView(statusBarBlocker, params)
+            Log.d(TAG, "Status bar blocker added")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to block status bar", e)
+        }
+    }
+    
+    private fun removeStatusBarBlocker() {
+        try {
+            statusBarBlocker?.let {
+                windowManager?.removeView(it)
+                statusBarBlocker = null
+                Log.d(TAG, "Status bar blocker removed")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to remove status bar blocker", e)
+        }
+    }
+    
+    private fun setupWindowFlagsEarly() {
         // Show over lock screen
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
@@ -301,23 +373,36 @@ class DeviceLockActivity : Activity() {
         
         // Prevent screenshots
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.let { controller ->
-                controller.hide(WindowInsets.Type.systemBars())
-                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+    
+    private fun setupSystemUI() {
+        // System UI visibility requires DecorView - call after setContentView
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.let { controller ->
+                    controller.hide(WindowInsets.Type.systemBars())
+                    controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                )
             }
-        } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_FULLSCREEN
-            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting system UI", e)
         }
+    }
+    
+    private fun setupWindowFlags() {
+        // Combined setup for onWindowFocusChanged
+        setupWindowFlagsEarly()
+        setupSystemUI()
     }
     
     private fun createLockView(): View {
@@ -433,6 +518,8 @@ class DeviceLockActivity : Activity() {
         } catch (e: Exception) {
             // Already unregistered
         }
+        // Remove the status bar blocker overlay
+        removeStatusBarBlocker()
     }
     
     override fun onWindowFocusChanged(hasFocus: Boolean) {

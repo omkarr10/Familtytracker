@@ -97,6 +97,14 @@ class MainActivity : AppCompatActivity() {
         setupUI()
         checkDeviceId()
         requestAllPermissions()
+        
+        // Always start command listener so we can receive lock commands
+        // even if tracking isn't explicitly enabled
+        lifecycleScope.launch {
+            if (preferencesManager.deviceId.first() != null) {
+                CommandListenerService.start(this@MainActivity)
+            }
+        }
     }
     
     private fun setupUI() {
@@ -285,6 +293,28 @@ class MainActivity : AppCompatActivity() {
                 .setMessage("To ensure reliable tracking, please disable battery optimization for this app.")
                 .setPositiveButton("Continue") { _, _ ->
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                    startActivity(intent)
+                    checkOverlayPermission()
+                }
+                .setNegativeButton("Skip") { _, _ ->
+                    checkOverlayPermission()
+                }
+                .show()
+        } else {
+            checkOverlayPermission()
+        }
+    }
+    
+    private fun checkOverlayPermission() {
+        // Overlay permission is needed to block notification bar during lock
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            AlertDialog.Builder(this)
+                .setTitle("Overlay Permission Required")
+                .setMessage("For complete device lock security, please enable 'Display over other apps' permission.")
+                .setPositiveButton("Enable") { _, _ ->
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                         data = Uri.parse("package:$packageName")
                     }
                     startActivity(intent)

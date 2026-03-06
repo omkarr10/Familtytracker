@@ -1,5 +1,7 @@
 package com.familytracker.services
 
+import android.app.Notification
+import android.app.PendingIntent
 import android.app.Service
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -7,21 +9,22 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.familytracker.FamilyTrackerApp
+import com.familytracker.MainActivity
+import com.familytracker.R
 import com.familytracker.data.PreferencesManager
 import com.familytracker.data.SupabaseClient
 import com.familytracker.data.TheftDetectionManager
 import com.familytracker.receivers.DeviceAdminReceiver
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.realtime
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.launch
 
 /**
  * Listens for remote commands from the dashboard:
@@ -57,6 +60,10 @@ class CommandListenerService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Run as a lightweight foreground service so Android keeps it alive
+        startForeground(1005, createNotification())
+
+        // Ensure we only start one listener loop
         serviceScope.launch {
             startListeningForCommands()
         }
@@ -75,19 +82,21 @@ class CommandListenerService : Service() {
         val deviceId = preferencesManager.deviceId.first()
         if (deviceId == null) {
             Log.e(TAG, "Device ID is null, stopping listener")
+            stopSelf()
             return
         }
-        
+
         Log.d(TAG, "Starting command listener for device: $deviceId")
         try {
-            // Poll for commands every 30 seconds (realtime requires more setup)
+            // Poll for commands frequently so dashboard clicks feel instant
             while (true) {
                 try {
                     checkForCommands(deviceId)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error checking commands", e)
                 }
-                delay(30_000)  // Check every 30 seconds
+                // Short delay keeps commands responsive but avoids tight loop
+                delay(5_000)
             }
         } catch (e: CancellationException) {
             Log.d(TAG, "Command listener cancelled")
@@ -192,5 +201,24 @@ class CommandListenerService : Service() {
     private fun deactivateTheftMode() {
         Log.d(TAG, "Deactivating theft mode...")
         TheftDetectionManager.deactivateTheftMode()
+    }
+
+    private fun createNotification(): Notification {
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(this, FamilyTrackerApp.CHANNEL_ID)
+            .setContentTitle("Security Commands Active")
+            .setContentText("Listening for remote lock, alarm, and photo commands")
+            .setSmallIcon(R.drawable.ic_location)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .build()
     }
 }

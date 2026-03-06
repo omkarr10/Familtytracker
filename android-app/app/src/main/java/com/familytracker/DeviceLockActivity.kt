@@ -11,8 +11,11 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -21,11 +24,12 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.familytracker.receivers.DeviceAdminReceiver
+import com.familytracker.services.LocationService
 import kotlin.random.Random
 
 /**
  * Full-screen lock activity that completely blocks the device.
- * Uses Device Admin to set random password - device becomes truly unusable.
+ * STEALTH MODE: Makes phone appear completely dead/off while still tracking.
  * Can only be unlocked via remote command from dashboard.
  */
 class DeviceLockActivity : Activity() {
@@ -36,13 +40,16 @@ class DeviceLockActivity : Activity() {
         private const val PREFS_NAME = "device_lock_prefs"
         private const val KEY_LOCK_PASSWORD = "lock_password"
         private const val KEY_IS_LOCKED = "is_locked"
+        private const val KEY_STEALTH_MODE = "stealth_mode"
         
         private var isLocked = false
+        private var isStealthMode = false
         
         fun isDeviceLocked(): Boolean = isLocked
+        fun isInStealthMode(): Boolean = isStealthMode
         
-        fun lockDevice(context: Context) {
-            if (isLocked) {
+        fun lockDevice(context: Context, stealth: Boolean = false) {
+            if (isLocked && !stealth) {
                 // Already locked, just bring activity to front
                 val intent = Intent(context, DeviceLockActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -53,15 +60,20 @@ class DeviceLockActivity : Activity() {
             }
             
             isLocked = true
+            isStealthMode = stealth
             
             // Save lock state
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_IS_LOCKED, true)
+                .putBoolean(KEY_STEALTH_MODE, stealth)
                 .apply()
             
             // Try to set a random password using Device Admin
             setRandomPassword(context)
+            
+            // Trigger location burst to track thief
+            LocationService.triggerBurstMode("device_locked")
             
             val intent = Intent(context, DeviceLockActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -69,6 +81,7 @@ class DeviceLockActivity : Activity() {
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
                 addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                putExtra("stealth", stealth)
             }
             context.startActivity(intent)
         }
@@ -107,11 +120,13 @@ class DeviceLockActivity : Activity() {
         
         fun unlockDevice(context: Context) {
             isLocked = false
+            isStealthMode = false
             
             // Clear lock state
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_IS_LOCKED, false)
+                .putBoolean(KEY_STEALTH_MODE, false)
                 .apply()
             
             // Clear the password we set
@@ -151,7 +166,8 @@ class DeviceLockActivity : Activity() {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             if (prefs.getBoolean(KEY_IS_LOCKED, false)) {
                 isLocked = true
-                lockDevice(context)
+                isStealthMode = prefs.getBoolean(KEY_STEALTH_MODE, false)
+                lockDevice(context, isStealthMode)
             }
         }
     }
@@ -160,18 +176,32 @@ class DeviceLockActivity : Activity() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == ACTION_UNLOCK) {
                 isLocked = false
+                isStealthMode = false
                 finishAndRemoveTask()
             }
         }
     }
     
+    private val handler = Handler(Looper.getMainLooper())
+    private var tapCount = 0
+    private var lastTapTime = 0L
+    private var stealthModeEnabled = false
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Check if stealth mode from intent or saved state
+        stealthModeEnabled = intent?.getBooleanExtra("stealth", false) ?: false
+        if (!stealthModeEnabled) {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            stealthModeEnabled = prefs.getBoolean(KEY_STEALTH_MODE, false)
+        }
+        isStealthMode = stealthModeEnabled
         
         // Make it full screen and show over lock screen
         setupWindowFlags()
         
-        // Create and set the lock screen view
+        // Create and set the lock screen view (stealth = black screen)
         setContentView(createLockView())
         
         // Register for unlock broadcasts
@@ -179,19 +209,43 @@ class DeviceLockActivity : Activity() {
             unlockReceiver,
             IntentFilter(ACTION_UNLOCK)
         )
+        
+        // In stealth mode, turn screen off after 2 seconds to appear dead
+        if (stealthModeEnabled) {
+            handler.postDelayed({
+                turnScreenOff()
+            }, 2000)
+        }
+    }
+    
+    private fun turnScreenOff() {
+        try {
+            // Reduce brightness to minimum
+            val params = window.attributes
+            params.screenBrightness = 0.0f
+            window.attributes = params
+            
+            // Don't keep screen on in stealth mode
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error turning screen off", e)
+        }
     }
     
     private fun setupWindowFlags() {
-        // Show over lock screen and keep screen on
+        // Show over lock screen
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
-            setTurnScreenOn(true)
+            if (!stealthModeEnabled) {
+                setTurnScreenOn(true)
+            }
         } else {
             @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            )
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+            if (!stealthModeEnabled) {
+                @Suppress("DEPRECATION")
+                window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            }
         }
         
         // Dismiss keyguard
@@ -201,7 +255,9 @@ class DeviceLockActivity : Activity() {
         }
         
         // Full screen immersive
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (!stealthModeEnabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         
@@ -227,6 +283,16 @@ class DeviceLockActivity : Activity() {
     }
     
     private fun createLockView(): View {
+        // STEALTH MODE: Just pure black screen - phone appears dead
+        if (stealthModeEnabled) {
+            return View(this).apply {
+                setBackgroundColor(Color.BLACK)
+                // Intercept all touches silently
+                setOnTouchListener { _, _ -> true }
+            }
+        }
+        
+        // NORMAL LOCK MODE: Show lock message
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = android.view.Gravity.CENTER

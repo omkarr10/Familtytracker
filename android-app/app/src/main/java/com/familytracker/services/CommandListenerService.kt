@@ -153,6 +153,10 @@ class CommandListenerService : Service() {
                     // Complete lock - works even without anti-theft mode for security
                     lockDeviceComplete()
                 }
+                "stealth_lock" -> {
+                    // Stealth lock - phone appears dead/off but still tracks
+                    stealthLockDevice()
+                }
                 "unlock" -> {
                     // Unlock the device
                     unlockDevice()
@@ -210,6 +214,15 @@ class CommandListenerService : Service() {
         }
         
         Log.d(TAG, "Device locked completely")
+    }
+    
+    private fun stealthLockDevice() {
+        Log.d(TAG, "Stealth lock - phone appears dead...")
+        
+        // Start the DeviceLockService in stealth mode
+        DeviceLockService.startStealthLock(this)
+        
+        Log.d(TAG, "Device stealth locked - appears dead")
     }
     
     private fun unlockDevice() {

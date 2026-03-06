@@ -14,6 +14,7 @@ import {
   Smartphone,
   Image,
   X,
+  Power,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { toast } from './Toast'
@@ -208,6 +209,12 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
             label="Lock Phone"
             icon={Lock}
             variant="warning"
+          />
+          <CommandButton
+            command="stealth_lock"
+            label="Stealth Lock"
+            icon={Power}
+            variant="danger"
           />
           <CommandButton
             command="unlock"

@@ -96,7 +96,8 @@ object SupabaseClient {
             buildJsonObject {
                 put("device_id", deviceId)
                 put("photo_base64", photoBase64)
-                put("is_front_camera", isFrontCamera)
+                put("camera_type", if (isFrontCamera) "front" else "back")
+                put("trigger_event", "manual_capture")
                 put("created_at", Instant.now().toString())
             }
         )
@@ -108,7 +109,7 @@ object SupabaseClient {
                 .select {
                     filter {
                         eq("device_id", deviceId)
-                        eq("executed", false)
+                        eq("status", "pending")
                     }
                 }
                 .decodeList<RemoteCommand>()
@@ -120,7 +121,7 @@ object SupabaseClient {
     suspend fun markCommandExecuted(commandId: String) {
         client.from("remote_commands").update(
             buildJsonObject {
-                put("executed", true)
+                put("status", "executed")
                 put("executed_at", Instant.now().toString())
             }
         ) {
@@ -137,11 +138,19 @@ object SupabaseClient {
         latitude: Double? = null,
         longitude: Double? = null
     ) {
+        // Map score to severity: 0-20=low, 21-35=medium, 36-50=high, 51+=critical
+        val severity = when {
+            score >= 50 -> "critical"
+            score >= 35 -> "high"
+            score >= 20 -> "medium"
+            else -> "low"
+        }
+        
         client.from("theft_events").insert(
             buildJsonObject {
                 put("device_id", deviceId)
                 put("event_type", eventType)
-                put("score", score)
+                put("severity", severity)
                 latitude?.let { put("latitude", it) }
                 longitude?.let { put("longitude", it) }
                 put("created_at", Instant.now().toString())
@@ -155,5 +164,5 @@ data class RemoteCommand(
     val id: String,
     val device_id: String,
     val command: String,
-    val executed: Boolean = false
+    val status: String = "pending"
 )

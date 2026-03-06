@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -182,6 +183,40 @@ class DeviceLockActivity : Activity() {
         }
     }
     
+    // Receiver to detect when screen turns off (power button pressed)
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF && isLocked) {
+                // Power button was pressed - immediately wake up screen
+                wakeUpScreen()
+            }
+        }
+    }
+    
+    private fun wakeUpScreen() {
+        try {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            @Suppress("DEPRECATION")
+            val wakeLock = powerManager.newWakeLock(
+                PowerManager.FULL_WAKE_LOCK or 
+                PowerManager.ACQUIRE_CAUSES_WAKEUP or 
+                PowerManager.ON_AFTER_RELEASE,
+                "FamilyTracker:WakeUp"
+            )
+            wakeLock.acquire(3000L)
+            wakeLock.release()
+            
+            // Bring lock activity back to front
+            handler.postDelayed({
+                if (isLocked) {
+                    lockDevice(this, stealthModeEnabled)
+                }
+            }, 100)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to wake screen", e)
+        }
+    }
+    
     private val handler = Handler(Looper.getMainLooper())
     private var tapCount = 0
     private var lastTapTime = 0L
@@ -209,6 +244,9 @@ class DeviceLockActivity : Activity() {
             unlockReceiver,
             IntentFilter(ACTION_UNLOCK)
         )
+        
+        // Register for screen off events (power button press)
+        registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         
         // In stealth mode, turn screen off after 2 seconds to appear dead
         if (stealthModeEnabled) {
@@ -354,7 +392,10 @@ class DeviceLockActivity : Activity() {
                 KeyEvent.KEYCODE_BACK,
                 KeyEvent.KEYCODE_HOME,
                 KeyEvent.KEYCODE_APP_SWITCH,
-                KeyEvent.KEYCODE_MENU -> return true
+                KeyEvent.KEYCODE_MENU,
+                KeyEvent.KEYCODE_POWER,
+                KeyEvent.KEYCODE_VOLUME_UP,
+                KeyEvent.KEYCODE_VOLUME_DOWN -> return true
             }
         }
         return super.onKeyDown(keyCode, event)
@@ -387,6 +428,11 @@ class DeviceLockActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(unlockReceiver)
+        try {
+            unregisterReceiver(screenOffReceiver)
+        } catch (e: Exception) {
+            // Already unregistered
+        }
     }
     
     override fun onWindowFocusChanged(hasFocus: Boolean) {

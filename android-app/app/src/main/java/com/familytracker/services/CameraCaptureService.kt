@@ -90,14 +90,38 @@ class CameraCaptureService : Service() {
         
         serviceScope.launch {
             // Capture front camera first (thief's face)
-            withTimeoutOrNull(5000) { captureFromCamera(true) }
+            var frontSuccess = false
+            repeat(2) { attempt ->
+                val result = withTimeoutOrNull(10_000) { captureFromCamera(true) }
+                if (result == true) {
+                    Log.d(TAG, "Front camera capture succeeded on attempt ${attempt + 1}")
+                    frontSuccess = true
+                    return@repeat
+                } else {
+                    Log.w(TAG, "Front camera capture failed on attempt ${attempt + 1}")
+                    closeCamera()
+                    delay(500)
+                }
+            }
             
             // CRITICAL: close camera before next capture
             closeCamera()
             delay(500)
             
             // Then capture back camera (surroundings)
-            withTimeoutOrNull(5000) { captureFromCamera(false) }
+            var backSuccess = false
+            repeat(2) { attempt ->
+                val result = withTimeoutOrNull(10_000) { captureFromCamera(false) }
+                if (result == true) {
+                    Log.d(TAG, "Back camera capture succeeded on attempt ${attempt + 1}")
+                    backSuccess = true
+                    return@repeat
+                } else {
+                    Log.w(TAG, "Back camera capture failed on attempt ${attempt + 1}")
+                    closeCamera()
+                    delay(500)
+                }
+            }
             
             closeCamera()
             delay(500)

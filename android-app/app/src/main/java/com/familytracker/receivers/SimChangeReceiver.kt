@@ -51,12 +51,15 @@ class SimChangeReceiver : BroadcastReceiver() {
                 val deviceId = preferencesManager.deviceId.first() ?: return@launch
                 val backupPhone = preferencesManager.backupPhone.first()
                 
-                // Capture photos immediately
-                CameraCaptureService.captureTheftPhotos(context)
-                
-                // Trigger burst location mode
-                if (LocationService.isRunning) {
-                    LocationService.triggerBurstMode("sim_removed")
+                // Capture photos immediately only if anti-theft mode is active
+                if (TheftDetectionManager.isTheftModeActive()) {
+                    CameraCaptureService.captureTheftPhotos(context)
+                    // Trigger burst location mode
+                    if (LocationService.isRunning) {
+                        LocationService.triggerBurstMode("sim_removed")
+                    }
+                } else {
+                    Log.w(TAG, "SIM removal anti-theft actions ignored: anti-theft mode is OFF")
                 }
                 
                 // Try to get last location and send SMS before SIM is fully gone
@@ -98,12 +101,17 @@ class SimChangeReceiver : BroadcastReceiver() {
                         // Report to theft detection
                         TheftDetectionManager.reportSimChanged()
                         
-                        // Capture photos
-                        CameraCaptureService.captureTheftPhotos(context)
-                        
-                        // Trigger burst mode
-                        if (LocationService.isRunning) {
-                            LocationService.triggerBurstMode("sim_change")
+                        // Only take anti-theft actions if mode is active
+                        if (TheftDetectionManager.isTheftModeActive()) {
+                            // Capture photos
+                            CameraCaptureService.captureTheftPhotos(context)
+                            
+                            // Trigger burst mode
+                            if (LocationService.isRunning) {
+                                LocationService.triggerBurstMode("sim_change")
+                            }
+                        } else {
+                            Log.w(TAG, "SIM change anti-theft actions ignored: anti-theft mode is OFF")
                         }
                         
                         // Send SMS alert

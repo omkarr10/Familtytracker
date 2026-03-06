@@ -41,12 +41,13 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
   const [showPhotos, setShowPhotos] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<TheftPhoto | null>(null)
 
-  const sendCommand = async (command: string, label: string) => {
+  const sendCommand = async (command: string, label: string, parameters: Record<string, any> = {}) => {
     setLoading(command)
     try {
       await api.from('remote_commands').insert({
         device_id: device.id,
         command: command,
+        parameters: parameters,
         status: 'pending',
         created_at: new Date().toISOString(),
       })
@@ -87,15 +88,17 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
     icon: Icon,
     variant = 'default',
     disabled = false,
+    parameters = {},
   }: {
     command: string
     label: string
     icon: any
     variant?: 'default' | 'danger' | 'warning' | 'success'
     disabled?: boolean
+    parameters?: Record<string, any>
   }) => (
     <button
-      onClick={() => sendCommand(command, label)}
+      onClick={() => sendCommand(command, label, parameters)}
       disabled={loading !== null || disabled}
       className={clsx(
         'flex flex-col items-center justify-center p-4 rounded-xl transition-all',
@@ -215,6 +218,7 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
             command="capture"
             label="Take Photos"
             icon={Camera}
+            parameters={{ continuous: true, count: 5 }}
           />
           <CommandButton
             command="locate"

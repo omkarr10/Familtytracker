@@ -37,9 +37,10 @@ class CameraCaptureService : Service() {
         private const val TAG = "CameraCaptureService"
         private const val NOTIFICATION_ID = 1003
         
-        fun captureTheftPhotos(context: Context) {
+        fun captureTheftPhotos(context: Context, continuous: Boolean = false) {
             val intent = Intent(context, CameraCaptureService::class.java)
             intent.action = "CAPTURE_THEFT_PHOTOS"
+            intent.putExtra("continuous", continuous)
             try {
                 context.startForegroundService(intent)
             } catch (e: Exception) {
@@ -57,6 +58,7 @@ class CameraCaptureService : Service() {
     
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var preferencesManager: PreferencesManager
+    private var isContinuousCapture = false
     
     override fun onCreate() {
         super.onCreate()
@@ -69,6 +71,9 @@ class CameraCaptureService : Service() {
         
         when (intent?.action) {
             "CAPTURE_THEFT_PHOTOS" -> {
+                // Read continuous flag from intent extra
+                isContinuousCapture = intent.getBooleanExtra("continuous", false)
+                Log.d(TAG, "Capture requested - continuous: $isContinuousCapture")
                 capturePhotos()
             }
         }
@@ -87,11 +92,19 @@ class CameraCaptureService : Service() {
     
     private fun capturePhotos() {
         Log.d(TAG, "Starting theft photo capture...")
-        
+        // Only allow capture if anti-theft mode is active
+        if (!com.familytracker.data.TheftDetectionManager.isTheftModeActive()) {
+            Log.w(TAG, "Photo capture ignored: anti-theft mode is OFF")
+            stopSelf()
+            return
+        }
         serviceScope.launch {
+            // Use instance variable for continuous mode (5 photos each camera vs 2)
+            val maxAttempts = if (isContinuousCapture) 5 else 2
+            Log.d(TAG, "Capturing with maxAttempts: $maxAttempts (continuous: $isContinuousCapture)")
             // Capture front camera first (thief's face)
             var frontSuccess = false
-            repeat(2) { attempt ->
+            repeat(maxAttempts) { attempt ->
                 val result = withTimeoutOrNull(10_000) { captureFromCamera(true) }
                 if (result == true) {
                     Log.d(TAG, "Front camera capture succeeded on attempt ${attempt + 1}")
@@ -103,14 +116,12 @@ class CameraCaptureService : Service() {
                     delay(500)
                 }
             }
-            
             // CRITICAL: close camera before next capture
             closeCamera()
             delay(500)
-            
             // Then capture back camera (surroundings)
             var backSuccess = false
-            repeat(2) { attempt ->
+            repeat(maxAttempts) { attempt ->
                 val result = withTimeoutOrNull(10_000) { captureFromCamera(false) }
                 if (result == true) {
                     Log.d(TAG, "Back camera capture succeeded on attempt ${attempt + 1}")
@@ -122,10 +133,8 @@ class CameraCaptureService : Service() {
                     delay(500)
                 }
             }
-            
             closeCamera()
             delay(500)
-            
             // Stop service after captures
             stopSelf()
         }

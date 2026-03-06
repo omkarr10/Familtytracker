@@ -127,8 +127,13 @@ class SmsCommandReceiver : BroadcastReceiver() {
     
     private fun handleAlarmCommand(context: Context, replyTo: String) {
         Log.d(TAG, "Executing ALARM command")
-        AlarmService.startAlarm(context)
-        sendSms(context, replyTo, "🚨 ALARM ACTIVATED!")
+        if (TheftDetectionManager.isTheftModeActive()) {
+            AlarmService.startAlarm(context)
+            sendSms(context, replyTo, "🚨 ALARM ACTIVATED!")
+        } else {
+            Log.w(TAG, "Alarm command ignored: anti-theft mode is OFF")
+            sendSms(context, replyTo, "Anti-theft mode is OFF. Alarm ignored.")
+        }
     }
     
     private fun handleStopAlarmCommand(context: Context, replyTo: String) {
@@ -139,8 +144,13 @@ class SmsCommandReceiver : BroadcastReceiver() {
     
     private fun handleCaptureCommand(context: Context, replyTo: String) {
         Log.d(TAG, "Executing CAPTURE command")
-        CameraCaptureService.captureTheftPhotos(context)
-        sendSms(context, replyTo, "📸 Capturing photos... Check dashboard for images.")
+        if (TheftDetectionManager.isTheftModeActive()) {
+            CameraCaptureService.captureTheftPhotos(context)
+            sendSms(context, replyTo, "📸 Capturing photos... Check dashboard for images.")
+        } else {
+            Log.w(TAG, "Capture command ignored: anti-theft mode is OFF")
+            sendSms(context, replyTo, "Anti-theft mode is OFF. Capture ignored.")
+        }
     }
     
     private fun handleTheftModeCommand(context: Context, replyTo: String) {
@@ -153,6 +163,12 @@ class SmsCommandReceiver : BroadcastReceiver() {
 
     private fun handleLockCommand(context: Context, replyTo: String) {
         Log.d(TAG, "Executing LOCK command")
+        
+        if (!TheftDetectionManager.isTheftModeActive()) {
+            Log.w(TAG, "Lock command ignored: anti-theft mode is OFF")
+            sendSms(context, replyTo, "Anti-theft mode is OFF. Lock ignored.")
+            return
+        }
 
         val devicePolicyManager =
             context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager

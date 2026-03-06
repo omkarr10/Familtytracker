@@ -111,29 +111,85 @@ class CommandListenerService : Service() {
             
             for (command in commands) {
                 Log.d(TAG, "Executing command: ${command.command}")
+                // Cache parameters before execution
+                cacheCommandParameters(command.id, parseParameters(command.parameters))
                 executeCommand(command.command, command.id)
+                // Clear cached parameters after execution
+                clearCommandParameters(command.id)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check commands", e)
         }
     }
     
+    // Parse JsonElement parameters into a Map
+    private fun parseParameters(params: kotlinx.serialization.json.JsonElement?): Map<String, Any>? {
+        if (params == null) return null
+        return try {
+            val jsonObject = params as? kotlinx.serialization.json.JsonObject ?: return null
+            jsonObject.mapValues { (_, value) ->
+                when (value) {
+                    is kotlinx.serialization.json.JsonPrimitive -> {
+                        when {
+                            value.isString -> value.content
+                            value.content == "true" -> true
+                            value.content == "false" -> false
+                            else -> value.content.toIntOrNull() ?: value.content
+                        }
+                    }
+                    else -> value.toString()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to parse command parameters", e)
+            null
+        }
+    }
+    
     private suspend fun executeCommand(command: String, commandId: String) {
         try {
             when (command) {
-                "lock" -> lockDevice()
-                "alarm" -> triggerAlarm()
-                "capture" -> capturePhotos()
+                "lock" -> {
+                    // Gate lock by anti-theft mode
+                    if (TheftDetectionManager.isTheftModeActive()) {
+                        lockDevice()
+                    } else {
+                        Log.w(TAG, "Lock command ignored: anti-theft mode is OFF")
+                    }
+                }
+                "alarm" -> {
+                    // Gate alarm by anti-theft mode
+                    if (TheftDetectionManager.isTheftModeActive()) {
+                        triggerAlarm()
+                    } else {
+                        Log.w(TAG, "Alarm command ignored: anti-theft mode is OFF")
+                    }
+                }
+                "capture" -> {
+                    // Only allow capture if anti-theft mode is active
+                    if (TheftDetectionManager.isTheftModeActive()) {
+                        // Check for continuous capture parameter
+                        val continuous = getCommandParameter(commandId, "continuous") == true
+                        capturePhotos(continuous)
+                    } else {
+                        Log.w(TAG, "Capture command ignored: anti-theft mode is OFF")
+                    }
+                }
                 "locate" -> sendImmediateLocation()
-                "wipe" -> wipeDevice()
+                "wipe" -> {
+                    // Gate wipe by anti-theft mode
+                    if (TheftDetectionManager.isTheftModeActive()) {
+                        wipeDevice()
+                    } else {
+                        Log.w(TAG, "Wipe command ignored: anti-theft mode is OFF")
+                    }
+                }
                 "activate_theft_mode" -> activateTheftMode()
                 "deactivate_theft_mode" -> deactivateTheftMode()
                 "stop_alarm" -> stopAlarm()
             }
-            
             // Mark command as executed
             SupabaseClient.markCommandExecuted(commandId)
-            
         } catch (e: Exception) {
             Log.e(TAG, "Failed to execute command: $command", e)
         }
@@ -163,9 +219,28 @@ class CommandListenerService : Service() {
         AlarmService.stopAlarm(this)
     }
     
-    private fun capturePhotos() {
+    private fun capturePhotos(continuous: Boolean = false) {
         Log.d(TAG, "Capturing photos...")
-        CameraCaptureService.captureTheftPhotos(this)
+        CameraCaptureService.captureTheftPhotos(this, continuous)
+    }
+    // Cached command parameters from DB
+    private var commandParameters: Map<String, Map<String, Any>> = emptyMap()
+    
+    // Store parameters when fetching commands
+    private fun cacheCommandParameters(commandId: String, params: Map<String, Any>?) {
+        if (params != null) {
+            commandParameters = commandParameters + (commandId to params)
+        }
+    }
+    
+    // Helper to get command parameter from cached data
+    private fun getCommandParameter(commandId: String, key: String): Boolean {
+        return commandParameters[commandId]?.get(key) as? Boolean ?: false
+    }
+    
+    // Clear cached parameters after command execution
+    private fun clearCommandParameters(commandId: String) {
+        commandParameters = commandParameters - commandId
     }
     
     private fun sendImmediateLocation() {

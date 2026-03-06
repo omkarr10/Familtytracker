@@ -77,28 +77,73 @@ export default function Dashboard() {
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
   const alertedDevicesRef = useRef<Set<string>>(new Set()) // Track which devices we've alerted for
   const [antiTheftDevice, setAntiTheftDeviceState] = useState<Device | null>(null)
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
   
-  // Persist anti-theft device selection to localStorage
-  const setAntiTheftDevice = (device: Device | null) => {
+  // Load user preferences from database (syncs across all devices)
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user) return
+      
+      try {
+        const res = await fetch(`/api/user/preferences?user_id=${user.id}`)
+        const data = await res.json()
+        
+        if (data.preferences?.selected_antitheft_device_id) {
+          // Cache locally for faster access
+          localStorage.setItem('ft_antitheft_device_id', data.preferences.selected_antitheft_device_id)
+        }
+        setPreferencesLoaded(true)
+      } catch (err) {
+        console.error('Failed to load preferences:', err)
+        setPreferencesLoaded(true) // Continue anyway, use localStorage fallback
+      }
+    }
+    
+    loadPreferences()
+  }, [user])
+  
+  // Persist anti-theft device selection to database (syncs across devices)
+  const setAntiTheftDevice = async (device: Device | null) => {
     setAntiTheftDeviceState(device)
+    
+    // Update localStorage immediately for fast local access
     if (device) {
       localStorage.setItem('ft_antitheft_device_id', device.id)
     } else {
       localStorage.removeItem('ft_antitheft_device_id')
     }
+    
+    // Sync to database so it works on all devices
+    if (user) {
+      try {
+        await fetch('/api/user/preferences', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            selected_antitheft_device_id: device?.id || null
+          })
+        })
+      } catch (err) {
+        console.error('Failed to save preference:', err)
+        // Device selection still works locally even if sync fails
+      }
+    }
   }
   
   // Restore and keep anti-theft device in sync with devices list
   useEffect(() => {
+    if (!preferencesLoaded || devices.length === 0) return
+    
     const savedDeviceId = localStorage.getItem('ft_antitheft_device_id')
-    if (devices.length > 0 && savedDeviceId) {
+    if (savedDeviceId) {
       const savedDevice = devices.find(d => d.id === savedDeviceId)
       if (savedDevice) {
         // Always update to latest device data (fresh battery, location, etc.)
         setAntiTheftDeviceState(savedDevice)
       }
     }
-  }, [devices])
+  }, [devices, preferencesLoaded])
 
   const fetchDevices = async () => {
     if (!user) {
@@ -240,10 +285,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Live Tracking</h1>
-        <div className="flex items-center gap-3">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">Live Tracking</h1>
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -251,13 +296,13 @@ export default function Dashboard() {
           >
             <RefreshCw className={clsx('w-5 h-5', refreshing && 'animate-spin')} />
           </button>
-          <span className="text-sm text-gray-500 dark:text-dark-400">{devices.length} device(s)</span>
+          <span className="text-xs sm:text-sm text-gray-500 dark:text-dark-400">{devices.length} device(s)</span>
         </div>
       </div>
 
-      {/* Activity Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+      {/* Activity Summary Stats - More compact on mobile */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <div className="card p-2 sm:p-3 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-blue-500 rounded-lg">
               <Navigation className="w-4 h-4 text-white" />

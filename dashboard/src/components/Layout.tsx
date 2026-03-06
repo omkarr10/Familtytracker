@@ -82,6 +82,14 @@ function ThemeToggle() {
   )
 }
 
+// Bottom nav items for mobile (fewer items, most important)
+const bottomNavItems = [
+  { to: '/dashboard', icon: MapPin, label: 'Track' },
+  { to: '/dashboard/devices', icon: Smartphone, label: 'Devices' },
+  { to: '/dashboard/alerts', icon: Bell, label: 'Alerts' },
+  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
+]
+
 export default function Layout() {
   const navigate = useNavigate()
   const { setUser } = useAuthStore()
@@ -96,7 +104,7 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-950 pb-16 lg:pb-0">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -191,10 +199,39 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">
+        <main className="p-3 sm:p-4 lg:p-6">
           <Outlet />
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-900 border-t border-gray-200 dark:border-dark-700 z-40 lg:hidden safe-area-bottom">
+        <div className="flex items-center justify-around h-16">
+          {bottomNavItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/dashboard'}
+              className={({ isActive }) =>
+                clsx(
+                  'flex flex-col items-center justify-center w-full h-full transition-colors relative',
+                  isActive
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                )
+              }
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-xs mt-1 font-medium">{label}</span>
+              {label === 'Alerts' && unreadCount > 0 && (
+                <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }

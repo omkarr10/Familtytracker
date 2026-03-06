@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import com.familytracker.DeviceLockActivity
 import com.familytracker.data.PreferencesManager
+import com.familytracker.services.CommandListenerService
+import com.familytracker.services.DeviceLockService
 import com.familytracker.services.LocationService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,23 +25,35 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == "android.intent.action.QUICKBOOT_POWERON") {
             
-            Log.d(TAG, "Boot completed, checking if should start service")
+            Log.d(TAG, "Boot completed, checking if should start services")
+            
+            // CRITICAL: Check and restore lock state first (security priority)
+            DeviceLockActivity.checkAndRestoreLock(context)
             
             CoroutineScope(Dispatchers.IO).launch {
                 val preferencesManager = PreferencesManager(context)
                 val deviceId = preferencesManager.deviceId.first()
                 
                 if (deviceId != null) {
-                    Log.d(TAG, "Device ID found, starting location service")
+                    Log.d(TAG, "Device ID found, starting services")
                     
+                    // Start location service
                     val serviceIntent = Intent(context, LocationService::class.java)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         context.startForegroundService(serviceIntent)
                     } else {
                         context.startService(serviceIntent)
                     }
+                    
+                    // Start command listener service
+                    CommandListenerService.start(context)
+                    
+                    // If device was locked, restart lock service
+                    if (DeviceLockActivity.isDeviceLocked()) {
+                        DeviceLockService.startLock(context)
+                    }
                 } else {
-                    Log.d(TAG, "No device ID, not starting service")
+                    Log.d(TAG, "No device ID, not starting services")
                 }
             }
         }

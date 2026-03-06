@@ -45,13 +45,18 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
   const sendCommand = async (command: string, label: string, parameters: Record<string, any> = {}) => {
     setLoading(command)
     try {
-      await api.from('remote_commands').insert({
+      // Minimal payload - let database handle defaults
+      const payload: any = {
         device_id: device.id,
         command: command,
-        parameters: parameters,
         status: 'pending',
-        created_at: new Date().toISOString(),
-      })
+      }
+      // Only add parameters if not empty
+      if (Object.keys(parameters).length > 0) {
+        payload.parameters = parameters
+      }
+      
+      await api.from('remote_commands').insert(payload)
       toast.success(`${label} command sent!`)
       
       if (command === 'activate_theft_mode') {

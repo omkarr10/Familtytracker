@@ -28,7 +28,12 @@ class AlarmService : Service() {
         fun startAlarm(context: Context) {
             val intent = Intent(context, AlarmService::class.java)
             intent.action = "START_ALARM"
-            context.startForegroundService(intent)
+            try {
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                Log.w(TAG, "startForegroundService failed, falling back to startService", e)
+                context.startService(intent)
+            }
         }
         
         fun stopAlarm(context: Context) {
@@ -105,20 +110,25 @@ class AlarmService : Service() {
             }
             
             // Play alarm sound
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            var alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            if (alarmUri == null) alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            if (alarmUri == null) alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
             
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                )
-                setDataSource(this@AlarmService, alarmUri)
-                isLooping = true
-                prepare()
-                start()
+            if (alarmUri != null) {
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build()
+                    )
+                    setDataSource(this@AlarmService, alarmUri)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+            } else {
+                Log.w(TAG, "No default alarm, notification, or ringtone sound found; relying on vibration only")
             }
             
             // Start vibration pattern

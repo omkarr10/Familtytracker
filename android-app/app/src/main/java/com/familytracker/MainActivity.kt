@@ -1,6 +1,7 @@
 package com.familytracker
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -36,7 +37,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private val locationPermissionLauncher = registerForActivityResult(
+    private val allPermissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
@@ -45,8 +46,15 @@ class MainActivity : AppCompatActivity() {
         if (fineLocationGranted || coarseLocationGranted) {
             requestBackgroundLocationPermission()
         } else {
-            Toast.makeText(this, "Location permission is required", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Location permission is required for full tracking", Toast.LENGTH_LONG).show()
+            checkBatteryOptimization()
         }
+    }
+    
+    private val deviceAdminLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        tryStartTracking()
     }
     
     private val backgroundLocationLauncher = registerForActivityResult(
@@ -88,6 +96,7 @@ class MainActivity : AppCompatActivity() {
         
         setupUI()
         checkDeviceId()
+        requestAllPermissions()
     }
     
     private fun setupUI() {
@@ -165,8 +174,20 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun checkLocationPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA,
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.READ_CONTACTS
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        val needsPermissions = permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+
         when {
-            hasLocationPermissions() -> {
+            !needsPermissions -> {
                 if (hasBackgroundLocationPermission()) {
                     checkBatteryOptimization()
                 } else {
@@ -174,10 +195,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                showLocationPermissionRationale()
+                showPermissionsRationale()
             }
             else -> {
-                requestLocationPermissions()
+                requestAllPermissions()
             }
         }
     }
@@ -198,13 +219,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun requestLocationPermissions() {
-        locationPermissionLauncher.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
+    private fun requestAllPermissions() {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA,
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.READ_CONTACTS
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        allPermissionsLauncher.launch(permissions.toTypedArray())
     }
     
     private fun requestBackgroundLocationPermission() {
@@ -222,12 +248,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun showLocationPermissionRationale() {
+    private fun showPermissionsRationale() {
         AlertDialog.Builder(this)
-            .setTitle("Location Permission Required")
-            .setMessage("This app needs location access to track device location for family safety.")
-            .setPositiveButton("Grant Permission") { _, _ ->
-                requestLocationPermissions()
+            .setTitle("Permissions Required")
+            .setMessage("This app needs location, camera, and SMS access to provide full security features.")
+            .setPositiveButton("Grant Permissions") { _, _ ->
+                requestAllPermissions()
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -258,14 +284,37 @@ class MainActivity : AppCompatActivity() {
                         data = Uri.parse("package:$packageName")
                     }
                     startActivity(intent)
-                    startTracking()
+                    checkDeviceAdminAndStart()
                 }
                 .setNegativeButton("Skip") { _, _ ->
-                    startTracking()
+                    checkDeviceAdminAndStart()
                 }
                 .show()
         } else {
-            startTracking()
+            checkDeviceAdminAndStart()
+        }
+    }
+    
+    private fun checkDeviceAdminAndStart() {
+        val devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
+        val componentName = android.content.ComponentName(this, com.familytracker.receivers.DeviceAdminReceiver::class.java)
+        
+        if (!devicePolicyManager.isAdminActive(componentName)) {
+            val intent = Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
+                putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Required for remote lock and wipe features.")
+            }
+            deviceAdminLauncher.launch(intent)
+        } else {
+            tryStartTracking()
+        }
+    }
+    
+    private fun tryStartTracking() {
+        lifecycleScope.launch {
+            if (preferencesManager.deviceId.first() != null) {
+                startTracking()
+            }
         }
     }
     

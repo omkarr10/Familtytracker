@@ -28,6 +28,7 @@ import com.familytracker.data.SupabaseClient
 import com.familytracker.data.TheftPhoto
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
+import kotlin.coroutines.resume
 import java.io.ByteArrayOutputStream
 
 class CameraCaptureService : Service() {
@@ -39,7 +40,12 @@ class CameraCaptureService : Service() {
         fun captureTheftPhotos(context: Context) {
             val intent = Intent(context, CameraCaptureService::class.java)
             intent.action = "CAPTURE_THEFT_PHOTOS"
-            context.startForegroundService(intent)
+            try {
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                Log.w(TAG, "startForegroundService failed, falling back to startService", e)
+                context.startService(intent)
+            }
         }
     }
     
@@ -84,22 +90,28 @@ class CameraCaptureService : Service() {
         
         serviceScope.launch {
             // Capture front camera first (thief's face)
-            captureFromCamera(true)
-            delay(1500)
+            withTimeoutOrNull(5000) { captureFromCamera(true) }
+            
+            // CRITICAL: close camera before next capture
+            closeCamera()
+            delay(500)
             
             // Then capture back camera (surroundings)
-            captureFromCamera(false)
-            delay(1500)
+            withTimeoutOrNull(5000) { captureFromCamera(false) }
+            
+            closeCamera()
+            delay(500)
             
             // Stop service after captures
             stopSelf()
         }
     }
     
-    private suspend fun captureFromCamera(isFront: Boolean) {
+    private suspend fun captureFromCamera(isFront: Boolean): Boolean = suspendCancellableCoroutine { continuation ->
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "Camera permission not granted")
-            return
+            if (continuation.isActive) continuation.resume(false)
+            return@suspendCancellableCoroutine
         }
         
         val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -107,15 +119,19 @@ class CameraCaptureService : Service() {
         
         if (cameraId == null) {
             Log.e(TAG, "No ${if (isFront) "front" else "back"} camera found")
-            return
+            if (continuation.isActive) continuation.resume(false)
+            return@suspendCancellableCoroutine
         }
         
-        withContext(Dispatchers.Main) {
-            try {
-                openCameraAndCapture(cameraManager, cameraId, isFront)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to capture from ${if (isFront) "front" else "back"} camera", e)
+        try {
+            openCameraAndCapture(cameraManager, cameraId, isFront) { success ->
+                if (continuation.isActive) {
+                    continuation.resume(success)
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to capture from ${if (isFront) "front" else "back"} camera", e)
+            if (continuation.isActive) continuation.resume(false)
         }
     }
     
@@ -131,8 +147,9 @@ class CameraCaptureService : Service() {
         return null
     }
     
-    private fun openCameraAndCapture(cameraManager: CameraManager, cameraId: String, isFront: Boolean) {
+    private fun openCameraAndCapture(cameraManager: CameraManager, cameraId: String, isFront: Boolean, onComplete: (Boolean) -> Unit) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            onComplete(false)
             return
         }
         
@@ -140,38 +157,47 @@ class CameraCaptureService : Service() {
         imageReader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 1)
         imageReader?.setOnImageAvailableListener({ reader ->
             val image = reader.acquireLatestImage()
+            var success = false
             image?.let {
-                val buffer = it.planes[0].buffer
-                val bytes = ByteArray(buffer.remaining())
-                buffer.get(bytes)
-                it.close()
-                
-                processAndUploadPhoto(bytes, isFront)
+                try {
+                    val buffer = it.planes[0].buffer
+                    val bytes = ByteArray(buffer.remaining())
+                    buffer.get(bytes)
+                    processAndUploadPhoto(bytes, isFront)
+                    success = true
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error reading image", e)
+                } finally {
+                    it.close()
+                }
             }
+            onComplete(success)
         }, backgroundHandler)
         
         cameraManager.openCamera(cameraId, object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice) {
                 cameraDevice = camera
-                createCaptureSession(isFront)
+                createCaptureSession(isFront, onComplete)
             }
             
             override fun onDisconnected(camera: CameraDevice) {
                 camera.close()
                 cameraDevice = null
+                onComplete(false)
             }
             
             override fun onError(camera: CameraDevice, error: Int) {
                 Log.e(TAG, "Camera error: $error")
                 camera.close()
                 cameraDevice = null
+                onComplete(false)
             }
         }, backgroundHandler)
     }
     
-    private fun createCaptureSession(isFront: Boolean) {
-        val camera = cameraDevice ?: return
-        val reader = imageReader ?: return
+    private fun createCaptureSession(isFront: Boolean, onComplete: (Boolean) -> Unit) {
+        val camera = cameraDevice ?: return onComplete(false)
+        val reader = imageReader ?: return onComplete(false)
         
         try {
             camera.createCaptureSession(
@@ -179,24 +205,26 @@ class CameraCaptureService : Service() {
                 object : CameraCaptureSession.StateCallback() {
                     override fun onConfigured(session: CameraCaptureSession) {
                         captureSession = session
-                        takePicture(isFront)
+                        takePicture(isFront, onComplete)
                     }
                     
                     override fun onConfigureFailed(session: CameraCaptureSession) {
                         Log.e(TAG, "Capture session configuration failed")
+                        onComplete(false)
                     }
                 },
                 backgroundHandler
             )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create capture session", e)
+            onComplete(false)
         }
     }
     
-    private fun takePicture(isFront: Boolean) {
-        val camera = cameraDevice ?: return
-        val reader = imageReader ?: return
-        val session = captureSession ?: return
+    private fun takePicture(isFront: Boolean, onComplete: (Boolean) -> Unit) {
+        val camera = cameraDevice ?: return onComplete(false)
+        val reader = imageReader ?: return onComplete(false)
+        val session = captureSession ?: return onComplete(false)
         
         try {
             val captureBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
@@ -209,11 +237,22 @@ class CameraCaptureService : Service() {
                     request: CaptureRequest,
                     result: TotalCaptureResult
                 ) {
-                    Log.d(TAG, "Photo captured from ${if (isFront) "front" else "back"} camera")
+                    Log.d(TAG, "Photo captured requested from ${if (isFront) "front" else "back"} camera")
+                    // The ImageReader listener will call onComplete
+                }
+
+                override fun onCaptureFailed(
+                    session: CameraCaptureSession,
+                    request: CaptureRequest,
+                    failure: CaptureFailure
+                ) {
+                    Log.e(TAG, "Photo capture failed")
+                    onComplete(false)
                 }
             }, backgroundHandler)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to take picture", e)
+            onComplete(false)
         }
     }
     

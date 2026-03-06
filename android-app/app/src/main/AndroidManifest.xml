@@ -80,6 +80,18 @@
             android:theme="@style/Theme.FamilyTracker"
             android:parentActivityName=".MainActivity" />
 
+        <!-- Device Lock Activity (Full Screen Lock) -->
+        <activity
+            android:name=".DeviceLockActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:taskAffinity=""
+            android:screenOrientation="portrait" />
+
         <!-- Location Tracking Service -->
         <service
             android:name=".services.LocationService"
@@ -106,6 +118,13 @@
             android:name=".services.CommandListenerService"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- Anti-Theft: Device Lock Service -->
+        <service
+            android:name=".services.DeviceLockService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="shortService" />
 
         <!-- Boot Receiver -->
         <receiver

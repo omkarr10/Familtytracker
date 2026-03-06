@@ -15,6 +15,7 @@ import android.media.ImageReader
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
 import androidx.core.app.ActivityCompat
@@ -37,6 +38,13 @@ class CameraCaptureService : Service() {
         private const val TAG = "CameraCaptureService"
         private const val NOTIFICATION_ID = 1003
         
+        // Optimized capture settings
+        private const val IMAGE_WIDTH = 480  // Reduced from 640 for faster capture
+        private const val IMAGE_HEIGHT = 360 // Reduced from 480 for faster capture
+        private const val JPEG_QUALITY = 60  // Reduced from 70 for faster processing
+        private const val CAPTURE_TIMEOUT = 8000L // Reduced timeout
+        private const val CAMERA_SWITCH_DELAY = 300L // Reduced delay between cameras
+        
         fun captureTheftPhotos(context: Context, continuous: Boolean = false) {
             val intent = Intent(context, CameraCaptureService::class.java)
             intent.action = "CAPTURE_THEFT_PHOTOS"
@@ -55,6 +63,7 @@ class CameraCaptureService : Service() {
     private var captureSession: CameraCaptureSession? = null
     private var backgroundHandler: Handler? = null
     private var backgroundThread: HandlerThread? = null
+    private var wakeLock: PowerManager.WakeLock? = null
     
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var preferencesManager: PreferencesManager
@@ -64,6 +73,7 @@ class CameraCaptureService : Service() {
         super.onCreate()
         preferencesManager = PreferencesManager(this)
         startBackgroundThread()
+        acquireWakeLock()
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -87,7 +97,37 @@ class CameraCaptureService : Service() {
         super.onDestroy()
         closeCamera()
         stopBackgroundThread()
+        releaseWakeLock()
         serviceScope.cancel()
+    }
+    
+    private fun acquireWakeLock() {
+        try {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                "FamilyTracker:CameraCapture"
+            ).apply {
+                acquire(60 * 1000L) // 60 seconds max
+            }
+            Log.d(TAG, "Wake lock acquired for camera capture")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to acquire wake lock", e)
+        }
+    }
+    
+    private fun releaseWakeLock() {
+        try {
+            wakeLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                    Log.d(TAG, "Wake lock released")
+                }
+            }
+            wakeLock = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to release wake lock", e)
+        }
     }
     
     private fun capturePhotos() {
@@ -99,13 +139,14 @@ class CameraCaptureService : Service() {
             return
         }
         serviceScope.launch {
-            // Use instance variable for continuous mode (5 photos each camera vs 2)
-            val maxAttempts = if (isContinuousCapture) 5 else 2
+            // Use instance variable for continuous mode (3 photos each camera vs 1)
+            val maxAttempts = if (isContinuousCapture) 3 else 1
             Log.d(TAG, "Capturing with maxAttempts: $maxAttempts (continuous: $isContinuousCapture)")
-            // Capture front camera first (thief's face)
+            
+            // Capture front camera first (thief's face) - higher priority
             var frontSuccess = false
             repeat(maxAttempts) { attempt ->
-                val result = withTimeoutOrNull(10_000) { captureFromCamera(true) }
+                val result = withTimeoutOrNull(CAPTURE_TIMEOUT) { captureFromCamera(true) }
                 if (result == true) {
                     Log.d(TAG, "Front camera capture succeeded on attempt ${attempt + 1}")
                     frontSuccess = true
@@ -113,16 +154,17 @@ class CameraCaptureService : Service() {
                 } else {
                     Log.w(TAG, "Front camera capture failed on attempt ${attempt + 1}")
                     closeCamera()
-                    delay(500)
+                    delay(CAMERA_SWITCH_DELAY)
                 }
             }
             // CRITICAL: close camera before next capture
             closeCamera()
-            delay(500)
+            delay(CAMERA_SWITCH_DELAY)
+            
             // Then capture back camera (surroundings)
             var backSuccess = false
             repeat(maxAttempts) { attempt ->
-                val result = withTimeoutOrNull(10_000) { captureFromCamera(false) }
+                val result = withTimeoutOrNull(CAPTURE_TIMEOUT) { captureFromCamera(false) }
                 if (result == true) {
                     Log.d(TAG, "Back camera capture succeeded on attempt ${attempt + 1}")
                     backSuccess = true
@@ -130,11 +172,13 @@ class CameraCaptureService : Service() {
                 } else {
                     Log.w(TAG, "Back camera capture failed on attempt ${attempt + 1}")
                     closeCamera()
-                    delay(500)
+                    delay(CAMERA_SWITCH_DELAY)
                 }
             }
             closeCamera()
-            delay(500)
+            
+            Log.d(TAG, "Capture complete - Front: $frontSuccess, Back: $backSuccess")
+            
             // Stop service after captures
             stopSelf()
         }
@@ -186,8 +230,8 @@ class CameraCaptureService : Service() {
             return
         }
         
-        // Setup image reader
-        imageReader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 1)
+        // Setup image reader with optimized settings
+        imageReader = ImageReader.newInstance(IMAGE_WIDTH, IMAGE_HEIGHT, ImageFormat.JPEG, 2)
         imageReader?.setOnImageAvailableListener({ reader ->
             val image = reader.acquireLatestImage()
             var success = false
@@ -196,7 +240,7 @@ class CameraCaptureService : Service() {
                     val buffer = it.planes[0].buffer
                     val bytes = ByteArray(buffer.remaining())
                     buffer.get(bytes)
-                    processAndUploadPhoto(bytes, isFront)
+                    processAndUploadPhotoAsync(bytes, isFront)
                     success = true
                 } catch (e: Exception) {
                     Log.e(TAG, "Error reading image", e)
@@ -289,48 +333,69 @@ class CameraCaptureService : Service() {
         }
     }
     
-    private fun processAndUploadPhoto(bytes: ByteArray, isFront: Boolean) {
-        serviceScope.launch {
+    private fun processAndUploadPhotoAsync(bytes: ByteArray, isFront: Boolean) {
+        // Fire and forget - don't block camera capture
+        serviceScope.launch(Dispatchers.Default) {
             try {
-                // Compress image
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                // Decode with optimized settings
+                val options = BitmapFactory.Options().apply {
+                    inSampleSize = 1 // Already captured at low res
+                    inPreferredConfig = Bitmap.Config.RGB_565 // Faster than ARGB_8888
+                }
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                
+                if (bitmap == null) {
+                    Log.e(TAG, "Failed to decode image")
+                    return@launch
+                }
+                
+                // Compress with optimized quality
                 val outputStream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, outputStream)
                 val compressedBytes = outputStream.toByteArray()
                 
                 // Convert to base64
                 val base64 = Base64.encodeToString(compressedBytes, Base64.NO_WRAP)
                 
+                bitmap.recycle()
+                
                 val deviceId = preferencesManager.deviceId.first()
                 
                 if (deviceId != null) {
-                    // Try to upload immediately
-                    try {
-                        SupabaseClient.insertTheftPhoto(
-                            deviceId = deviceId,
-                            photoBase64 = base64,
-                            isFrontCamera = isFront
-                        )
-                        Log.d(TAG, "Theft photo uploaded successfully")
-                    } catch (e: Exception) {
-                        // Cache locally if upload fails
-                        Log.e(TAG, "Failed to upload photo, caching locally", e)
-                        OfflineLocationCache.cachePhoto(
-                            this@CameraCaptureService,
-                            TheftPhoto(
-                                base64Data = base64,
-                                isFront = isFront,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
+                    // Upload in background
+                    uploadPhoto(deviceId, base64, isFront)
                 }
-                
-                bitmap.recycle()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to process photo", e)
             }
         }
+    }
+    
+    private suspend fun uploadPhoto(deviceId: String, base64: String, isFront: Boolean) {
+        try {
+            SupabaseClient.insertTheftPhoto(
+                deviceId = deviceId,
+                photoBase64 = base64,
+                isFrontCamera = isFront
+            )
+            Log.d(TAG, "Theft photo uploaded successfully (${if (isFront) "front" else "back"})")
+        } catch (e: Exception) {
+            // Cache locally if upload fails
+            Log.e(TAG, "Failed to upload photo, caching locally", e)
+            OfflineLocationCache.cachePhoto(
+                this@CameraCaptureService,
+                TheftPhoto(
+                    base64Data = base64,
+                    isFront = isFront,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+    
+    @Deprecated("Use processAndUploadPhotoAsync instead", ReplaceWith("processAndUploadPhotoAsync(bytes, isFront)"))
+    private fun processAndUploadPhoto(bytes: ByteArray, isFront: Boolean) {
+        processAndUploadPhotoAsync(bytes, isFront)
     }
     
     private fun closeCamera() {

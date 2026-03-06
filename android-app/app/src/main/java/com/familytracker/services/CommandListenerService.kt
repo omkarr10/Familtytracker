@@ -150,12 +150,12 @@ class CommandListenerService : Service() {
         try {
             when (command) {
                 "lock" -> {
-                    // Gate lock by anti-theft mode
-                    if (TheftDetectionManager.isTheftModeActive()) {
-                        lockDevice()
-                    } else {
-                        Log.w(TAG, "Lock command ignored: anti-theft mode is OFF")
-                    }
+                    // Complete lock - works even without anti-theft mode for security
+                    lockDeviceComplete()
+                }
+                "unlock" -> {
+                    // Unlock the device
+                    unlockDevice()
                 }
                 "alarm" -> {
                     // Gate alarm by anti-theft mode
@@ -195,8 +195,34 @@ class CommandListenerService : Service() {
         }
     }
     
+    private fun lockDeviceComplete() {
+        Log.d(TAG, "Complete device lock...")
+        
+        // Start the DeviceLockService which handles complete lock
+        DeviceLockService.startLock(this)
+        
+        // Also use device admin to lock the screen
+        val devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val componentName = ComponentName(this, DeviceAdminReceiver::class.java)
+        
+        if (devicePolicyManager.isAdminActive(componentName)) {
+            devicePolicyManager.lockNow()
+        }
+        
+        Log.d(TAG, "Device locked completely")
+    }
+    
+    private fun unlockDevice() {
+        Log.d(TAG, "Unlocking device...")
+        
+        // Stop the DeviceLockService
+        DeviceLockService.stopLock(this)
+        
+        Log.d(TAG, "Device unlocked")
+    }
+    
     private fun lockDevice() {
-        Log.d(TAG, "Locking device...")
+        Log.d(TAG, "Locking device (simple)...")
         
         val devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         val componentName = ComponentName(this, DeviceAdminReceiver::class.java)

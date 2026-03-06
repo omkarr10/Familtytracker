@@ -3,6 +3,7 @@ import { api } from '../lib/api'
 import { Device } from '../types/database'
 import {
   Lock,
+  Unlock,
   Volume2,
   VolumeX,
   Camera,
@@ -202,6 +203,12 @@ export function AntiTheftPanel({ device, onClose }: AntiTheftPanelProps) {
             label="Lock Phone"
             icon={Lock}
             variant="warning"
+          />
+          <CommandButton
+            command="unlock"
+            label="Unlock Phone"
+            icon={Unlock}
+            variant="success"
           />
           <CommandButton
             command="alarm"

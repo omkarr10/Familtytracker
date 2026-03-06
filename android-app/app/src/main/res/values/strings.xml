@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TrackIt</string>
+    <string name="accessibility_service_description">TrackIt uses accessibility services to provide anti-theft protection by preventing unauthorized access to device settings and notifications when the device is locked.</string>
 </resources>

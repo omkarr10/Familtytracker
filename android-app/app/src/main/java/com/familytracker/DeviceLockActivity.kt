@@ -26,9 +26,11 @@ import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.familytracker.receivers.DeviceAdminReceiver
 import com.familytracker.services.LocationService
+import com.familytracker.services.LockAccessibilityService
 import kotlin.random.Random
 
 /**
@@ -226,6 +228,7 @@ class DeviceLockActivity : Activity() {
     private var stealthModeEnabled = false
     private var statusBarBlocker: View? = null
     private var windowManager: WindowManager? = null
+    private var collapseRunnable: Runnable? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -282,20 +285,46 @@ class DeviceLockActivity : Activity() {
     }
     
     private fun blockStatusBar() {
+        // FIRST: Try using accessibility service (can truly block system UI)
+        if (LockAccessibilityService.isServiceRunning()) {
+            Log.d(TAG, "✓ LockAccessibilityService is running - using it to block status bar")
+            LockAccessibilityService.blockStatusBar()
+            // The accessibility service overlay is sufficient - no need for app overlay
+            // But we still start collapse monitoring as backup
+            startCollapseMonitoring()
+            return
+        } else {
+            Log.w(TAG, "⚠ LockAccessibilityService is NOT running! Status bar blocking will be LIMITED.")
+            Log.w(TAG, "⚠ User needs to enable Accessibility Service in Settings for full blocking.")
+        }
+        
+        // Fallback: Use TYPE_APPLICATION_OVERLAY (limited - can't block system UI)
         try {
             // Check if we have overlay permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                Log.w(TAG, "No overlay permission - cannot block status bar")
+                Log.w(TAG, "No overlay permission - cannot add visual overlay")
                 return
             }
             
             windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             
-            // Create an invisible view that blocks notification bar pulls
+            // Get screen dimensions
+            val displayMetrics = resources.displayMetrics
+            val screenHeight = displayMetrics.heightPixels
+            val screenWidth = displayMetrics.widthPixels
+            
+            // Get status bar height
+            val statusBarHeight = getStatusBarHeight()
+            
+            // Create a view that covers top portion of screen to block notification pulls
             statusBarBlocker = View(this).apply {
-                setBackgroundColor(Color.TRANSPARENT)
-                // Consume all touch events on this view
-                setOnTouchListener { _, _ -> true }
+                setBackgroundColor(if (stealthModeEnabled) Color.BLACK else Color.TRANSPARENT)
+                // Consume ALL touch events
+                setOnTouchListener { _, _ ->
+                    // Immediately collapse any notification panel
+                    collapseStatusBar()
+                    true
+                }
             }
             
             // Layout params for status bar blocking overlay
@@ -306,31 +335,117 @@ class DeviceLockActivity : Activity() {
                 WindowManager.LayoutParams.TYPE_SYSTEM_ERROR
             }
             
+            // Cover top 50% of screen with EXTRA height starting ABOVE visible screen
+            // to catch the invisible swipe area
+            val blockerHeight = (screenHeight * 0.5).toInt() + statusBarHeight
+            
             val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                resources.getDimensionPixelSize(
-                    resources.getIdentifier("status_bar_height", "dimen", "android")
-                ).coerceAtLeast(100), // At least 100px to cover status bar area
+                screenWidth,
+                blockerHeight,
                 layoutType,
+                // Critical flags combination for blocking touch
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.TOP or Gravity.START
                 x = 0
-                y = 0
+                // Start ABOVE the visible screen to cover the status bar touch area
+                y = -statusBarHeight
             }
             
             windowManager?.addView(statusBarBlocker, params)
-            Log.d(TAG, "Status bar blocker added")
+            Log.d(TAG, "Status bar blocker added: height=$blockerHeight, y=-$statusBarHeight")
+            
+            // Start continuous collapse monitoring - very aggressive at 50ms intervals
+            startCollapseMonitoring()
+            
+            // Also start monitoring window focus to detect notification panel opening
+            startFocusMonitoring()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to block status bar", e)
         }
     }
     
+    private fun getStatusBarHeight(): Int {
+        var result = 0
+        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        if (resourceId > 0) {
+            result = resources.getDimensionPixelSize(resourceId)
+        }
+        return if (result > 0) result else 100 // Default fallback
+    }
+    
+    private fun startFocusMonitoring() {
+        // Additional monitoring - when we lose focus (notification panel opened), regain it
+        handler.post(object : Runnable {
+            override fun run() {
+                if (isLocked) {
+                    if (!hasWindowFocus()) {
+                        // Lost focus - notification panel might be open
+                        collapseStatusBar()
+                        // Bring our activity back to front
+                        val intent = Intent(this@DeviceLockActivity, DeviceLockActivity::class.java).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        }
+                        startActivity(intent)
+                    }
+                    handler.postDelayed(this, 200)
+                }
+            }
+        })
+    }
+    
+    private fun startCollapseMonitoring() {
+        // Continuously collapse the status bar every 50ms while locked - AGGRESSIVE
+        collapseRunnable = object : Runnable {
+            override fun run() {
+                if (isLocked) {
+                    collapseStatusBar()
+                    handler.postDelayed(this, 50) // Very fast - 50ms
+                }
+            }
+        }
+        handler.post(collapseRunnable!!)
+    }
+    
+    private fun stopCollapseMonitoring() {
+        collapseRunnable?.let { handler.removeCallbacks(it) }
+        collapseRunnable = null
+    }
+    
+    @Suppress("DEPRECATION", "DiscouragedPrivateApi")
+    private fun collapseStatusBar() {
+        try {
+            // Use reflection to collapse the status bar
+            val statusBarService = getSystemService("statusbar")
+            val statusBarManager = Class.forName("android.app.StatusBarManager")
+            val collapse = statusBarManager.getMethod("collapsePanels")
+            collapse.invoke(statusBarService)
+        } catch (e: Exception) {
+            // Method might not exist on all devices, try alternative
+            try {
+                val service = getSystemService("statusbar")
+                val statusBarManager = Class.forName("android.app.StatusBarManager")
+                val collapse = statusBarManager.getMethod("collapse")
+                collapse.invoke(service)
+            } catch (ex: Exception) {
+                // Silently fail - not all devices support this
+            }
+        }
+    }
+    
     private fun removeStatusBarBlocker() {
+        // Stop the collapse monitoring
+        stopCollapseMonitoring()
+        
+        // Also unblock via accessibility service if running
+        if (LockAccessibilityService.isServiceRunning()) {
+            LockAccessibilityService.unblockStatusBar()
+        }
+        
         try {
             statusBarBlocker?.let {
                 windowManager?.removeView(it)
@@ -486,11 +601,45 @@ class DeviceLockActivity : Activity() {
         return super.onKeyDown(keyCode, event)
     }
     
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (isLocked && ev != null) {
+            // If touch starts at top 15% of screen, collapse status bar immediately
+            val screenHeight = resources.displayMetrics.heightPixels
+            if (ev.rawY < screenHeight * 0.15f) {
+                collapseStatusBar()
+            }
+            // On any touch event, aggressively collapse
+            if (ev.action == MotionEvent.ACTION_DOWN || ev.action == MotionEvent.ACTION_MOVE) {
+                collapseStatusBar()
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+    
     override fun onPause() {
         super.onPause()
         // If still locked, restart this activity to stay on top
         if (isLocked) {
             lockDevice(this)
+        }
+    }
+    
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (isLocked && !hasFocus) {
+            // Lost focus - notification panel might be opening
+            // Aggressively collapse it
+            collapseStatusBar()
+            handler.postDelayed({
+                collapseStatusBar()
+            }, 50)
+            handler.postDelayed({
+                collapseStatusBar()
+            }, 100)
+            // Bring activity back to front
+            lockDevice(this)
+        } else if (hasFocus) {
+            setupWindowFlags()
         }
     }
     
@@ -520,15 +669,5 @@ class DeviceLockActivity : Activity() {
         }
         // Remove the status bar blocker overlay
         removeStatusBarBlocker()
-    }
-    
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (!hasFocus && isLocked) {
-            // Lost focus, bring back to front
-            lockDevice(this)
-        } else if (hasFocus) {
-            setupWindowFlags()
-        }
     }
 }

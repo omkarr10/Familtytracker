@@ -52,6 +52,7 @@
     
     <!-- Anti-Theft: Overlay for blocking notification bar -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     
     <!-- Contacts for Emergency Contact Selection -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -128,6 +129,19 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="shortService" />
+
+        <!-- Anti-Theft: Accessibility Service for blocking notification bar -->
+        <service
+            android:name=".services.LockAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
         <!-- Boot Receiver -->
         <receiver

@@ -3,10 +3,10 @@ const API_BASE = '/api'
 
 // Session storage helper (defined first so it can be used by api)
 export const sessionStore = {
-  save: (session: any) => {
+  save: (session: any, user?: any) => {
     if (session) {
       localStorage.setItem('ft_session', JSON.stringify(session))
-      localStorage.setItem('ft_user', JSON.stringify(session.user))
+      localStorage.setItem('ft_user', JSON.stringify(user || session.user))
     }
   },
   
@@ -23,6 +23,81 @@ export const sessionStore = {
   clear: () => {
     localStorage.removeItem('ft_session')
     localStorage.removeItem('ft_user')
+  },
+  
+  // Check if session is expired or about to expire (within 5 minutes)
+  isExpired: () => {
+    const session = sessionStore.getSession()
+    if (!session?.expires_at) return true
+    
+    // expires_at is epoch seconds, convert to ms
+    const expiresAt = session.expires_at * 1000
+    const now = Date.now()
+    const fiveMinutes = 5 * 60 * 1000
+    
+    return now >= (expiresAt - fiveMinutes)
+  },
+  
+  // Refresh the session using the refresh token
+  refresh: async (): Promise<boolean> => {
+    const session = sessionStore.getSession()
+    if (!session?.refresh_token) {
+      console.log('No refresh token available')
+      return false
+    }
+    
+    try {
+      console.log('Attempting session refresh...')
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok || data.expired) {
+        console.log('Session refresh failed:', data.error)
+        sessionStore.clear()
+        return false
+      }
+      
+      // Save the new session
+      sessionStore.save(data.session, data.user)
+      console.log('Session refreshed successfully')
+      return true
+    } catch (err) {
+      console.error('Session refresh error:', err)
+      return false
+    }
+  },
+  
+  // Validate and refresh session if needed (call on app startup)
+  validateAndRefresh: async (): Promise<{ valid: boolean; user: any | null }> => {
+    const session = sessionStore.getSession()
+    const user = sessionStore.getUser()
+    
+    // No session at all
+    if (!session || !user) {
+      return { valid: false, user: null }
+    }
+    
+    // Session not expired - valid
+    if (!sessionStore.isExpired()) {
+      console.log('Session is valid')
+      return { valid: true, user }
+    }
+    
+    // Session expired - try to refresh
+    console.log('Session expired, attempting refresh...')
+    const refreshed = await sessionStore.refresh()
+    
+    if (refreshed) {
+      return { valid: true, user: sessionStore.getUser() }
+    }
+    
+    // Refresh failed - session invalid
+    return { valid: false, user: null }
   },
 }
 

@@ -318,6 +318,26 @@ class MainActivity : AppCompatActivity() {
                         data = Uri.parse("package:$packageName")
                     }
                     startActivity(intent)
+                    checkAccessibilityService()
+                }
+                .setNegativeButton("Skip") { _, _ ->
+                    checkAccessibilityService()
+                }
+                .show()
+        } else {
+            checkAccessibilityService()
+        }
+    }
+    
+    private fun checkAccessibilityService() {
+        // Accessibility service is needed to truly block the notification panel
+        if (!isAccessibilityServiceEnabled()) {
+            AlertDialog.Builder(this)
+                .setTitle("Accessibility Service Required")
+                .setMessage("For maximum anti-theft protection, please enable TrackIt in Accessibility Settings. This allows complete notification bar blocking during stealth lock.")
+                .setPositiveButton("Enable") { _, _ ->
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    startActivity(intent)
                     checkDeviceAdminAndStart()
                 }
                 .setNegativeButton("Skip") { _, _ ->
@@ -327,6 +347,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             checkDeviceAdminAndStart()
         }
+    }
+    
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        val service = "$packageName/${com.familytracker.services.LockAccessibilityService::class.java.canonicalName}"
+        val enabledServices = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabledServices.contains(service)
     }
     
     private fun checkDeviceAdminAndStart() {

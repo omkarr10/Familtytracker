@@ -76,7 +76,29 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [mapCenter] = useState<[number, number]>([20.5937, 78.9629]) // India center
   const alertedDevicesRef = useRef<Set<string>>(new Set()) // Track which devices we've alerted for
-  const [antiTheftDevice, setAntiTheftDevice] = useState<Device | null>(null)
+  const [antiTheftDevice, setAntiTheftDeviceState] = useState<Device | null>(null)
+  
+  // Persist anti-theft device selection to localStorage
+  const setAntiTheftDevice = (device: Device | null) => {
+    setAntiTheftDeviceState(device)
+    if (device) {
+      localStorage.setItem('ft_antitheft_device_id', device.id)
+    } else {
+      localStorage.removeItem('ft_antitheft_device_id')
+    }
+  }
+  
+  // Restore and keep anti-theft device in sync with devices list
+  useEffect(() => {
+    const savedDeviceId = localStorage.getItem('ft_antitheft_device_id')
+    if (devices.length > 0 && savedDeviceId) {
+      const savedDevice = devices.find(d => d.id === savedDeviceId)
+      if (savedDevice) {
+        // Always update to latest device data (fresh battery, location, etc.)
+        setAntiTheftDeviceState(savedDevice)
+      }
+    }
+  }, [devices])
 
   const fetchDevices = async () => {
     if (!user) {

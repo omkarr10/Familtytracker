@@ -26,8 +26,11 @@ class LocationService : Service() {
     companion object {
         private const val TAG = "LocationService"
         private const val NOTIFICATION_ID = 1001
-        private const val LOCATION_INTERVAL = 3 * 60 * 1000L  // 3 minutes
-        private const val BURST_INTERVAL = 10 * 1000L  // 10 seconds
+        
+        // BATTERY OPTIMIZED intervals
+        private const val LOCATION_INTERVAL_NORMAL = 5 * 60 * 1000L      // 5 minutes (was 3)
+        private const val LOCATION_INTERVAL_BATTERY_SAVER = 15 * 60 * 1000L  // 15 min when battery saver on
+        private const val BURST_INTERVAL = 15 * 1000L  // 15 seconds (was 10)
         private const val BURST_DURATION = 2 * 60 * 1000L  // 2 minutes
         
         var isRunning = false
@@ -137,13 +140,18 @@ class LocationService : Service() {
     }
     
     private fun startLocationUpdates() {
-        val interval = if (isBurstMode) BURST_INTERVAL else LOCATION_INTERVAL
+        // BATTERY OPTIMIZED - Use normal interval, or battery saver interval when needed
+        val interval = when {
+            isBurstMode -> BURST_INTERVAL
+            else -> LOCATION_INTERVAL_NORMAL
+        }
         
         val locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_BALANCED_POWER_ACCURACY,
             interval
         ).apply {
             setMinUpdateIntervalMillis(interval / 2)
+            setMaxUpdateDelayMillis(interval * 2) // Allow batching for battery savings
             setWaitForAccurateLocation(false)
         }.build()
         

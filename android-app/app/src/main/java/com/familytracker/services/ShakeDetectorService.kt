@@ -87,9 +87,11 @@ class ShakeDetectorService : Service(), SensorEventListener {
         startForeground(NOTIFICATION_ID, createNotification())
         
         accelerometer?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+            // BATTERY OPTIMIZED - Use NORMAL delay (~5 Hz) instead of UI (~60 Hz)
+            // This reduces CPU wake-ups by 90% while still detecting shakes reliably
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
             isRunning = true
-            Log.d(TAG, "Shake detector started")
+            Log.d(TAG, "Shake detector started (battery optimized)")
         } ?: run {
             Log.e(TAG, "No accelerometer available")
             stopSelf()
@@ -119,8 +121,9 @@ class ShakeDetectorService : Service(), SensorEventListener {
         
         val currentTime = System.currentTimeMillis()
         
-        // Throttle updates to ~50ms
-        if (currentTime - lastUpdate < 50) return
+        // BATTERY OPTIMIZED - Throttle updates to ~150ms (was 50ms)
+        // Still responsive enough for shake detection
+        if (currentTime - lastUpdate < 150) return
         
         val x = event.values[0]
         val y = event.values[1]

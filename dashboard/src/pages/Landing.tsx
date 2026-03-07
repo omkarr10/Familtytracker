@@ -326,8 +326,8 @@ export default function Landing() {
                     <span className="font-semibold">Wrong PIN entered</span> on Mom's Phone. 
                     Intruder photo captured.
                   </p>
-                  <div className="aspect-video bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                    <Camera className="w-8 h-8 text-slate-400" />
+                  <div className="aspect-video bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden">
+                    <img src="/01.png" alt="Intruder photo" className="w-full h-full object-cover" />
                   </div>
                   <p className="text-xs text-slate-500 mt-3">
                     Last location: 40.7128° N, 74.0060° W
